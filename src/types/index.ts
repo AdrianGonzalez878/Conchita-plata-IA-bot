@@ -61,19 +61,50 @@ export interface Message {
   created_at: string;
 }
 
-// --- Catálogo de Productos (Sanity) ---
+// --- Catálogo de Productos (Sanity — schema real de Conchita Plata) ---
 
-export interface Product {
+export type CategoriaProducto =
+  | "anillos"
+  | "collares"
+  | "aretes"
+  | "pulseras"
+  | "dijes"
+  | "cadenas"
+  | "juegos";
+
+export interface SanityImageRef {
+  _type: "image";
+  asset: { _ref: string; _type: "reference" };
+  alt?: string;
+}
+
+export interface PortableTextBlock {
+  _type: "block";
+  _key: string;
+  children: { _key: string; _type: "span"; text: string }[];
+}
+
+export interface Producto {
   _id: string;
-  name: string;
-  slug: string;
-  description: string;
-  price: number;
-  category: string;
-  material: string;
-  stock: number;
-  images: Array<{ _key: string; asset: { _ref: string } }>;
-  isAvailable: boolean;
+  titulo: string;
+  slug: { current: string };
+  precio: number;
+  tieneDescuento?: boolean;
+  tipoDescuento?: "porcentaje" | "monto";
+  valorDescuento?: number;
+  textoBadge?: string;
+  fechaInicioDescuento?: string;
+  fechaFinDescuento?: string;
+  imagenPrincipal: SanityImageRef;
+  galeria?: SanityImageRef[];
+  categoria: CategoriaProducto;
+  tieneOpcionExtra?: boolean;
+  nombreOpcionExtra?: string;
+  precioOpcionExtra?: number;
+  descripcion: PortableTextBlock[];
+  disponible: boolean;
+  stock?: number;
+  ventas?: number;
 }
 
 // --- Dashboard ---
@@ -81,3 +112,6 @@ export interface Product {
 export interface ConversationWithLastMessage extends Conversation {
   last_message: string | null;
 }
+
+// Mantener alias para compatibilidad hacia atrás
+export type Product = Producto;
