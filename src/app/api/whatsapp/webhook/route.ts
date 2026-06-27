@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
   // El procesamiento real se encola en QStash
   const qstash = new QStashClient({
     token: process.env.QSTASH_TOKEN!,
-    baseUrl: "https://qstash.upstash.io",
+    baseUrl: process.env.QSTASH_URL ?? "https://qstash.upstash.io",
   });
 
   if (body.object === "whatsapp_business_account") {
