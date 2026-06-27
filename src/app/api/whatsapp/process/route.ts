@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
     }));
 
   const result = await generateText({
-    model: anthropic("claude-3-5-haiku-20241022"),
+    model: anthropic("claude-haiku-4-5"),
     system: buildSystemPrompt(productsContext),
     messages: messages.length > 0 ? messages : [{ role: "user", content: message.text.body }],
   });
