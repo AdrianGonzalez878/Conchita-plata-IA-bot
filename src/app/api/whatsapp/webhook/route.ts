@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
 
         for (const message of messages) {
           if (message.type !== "text") continue;
+          if (!message.text?.body?.trim()) continue;
 
           const customerName =
             change.value.contacts?.[0]?.profile?.name ?? "Cliente";

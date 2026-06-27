@@ -190,6 +190,9 @@ export async function POST(request: NextRequest) {
     .eq("id", conversation.id);
 
   // 9. Enviar respuesta por WhatsApp
+  if (!aiResponse?.trim()) {
+    return NextResponse.json({ error: "Empty AI response" }, { status: 500 });
+  }
   await sendTextMessage({ to: message.from, message: aiResponse });
 
   return NextResponse.json({ status: "ok" });
