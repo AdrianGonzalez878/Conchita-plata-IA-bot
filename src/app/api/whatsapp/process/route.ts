@@ -169,11 +169,17 @@ export async function POST(request: NextRequest) {
       content: m.content,
     }));
 
-  const { text: aiResponse } = await generateText({
-    model: anthropic("claude-haiku-4-5"),
+  const result = await generateText({
+    model: anthropic("claude-3-5-haiku-20241022"),
     system: buildSystemPrompt(productsContext),
-    messages,
+    messages: messages.length > 0 ? messages : [{ role: "user", content: message.text.body }],
   });
+
+  console.log("AI result finishReason:", result.finishReason);
+  console.log("AI response length:", result.text?.length);
+
+  const aiResponse = result.text?.trim()
+    || "Hola, soy el asistente de Conchita Plata. En este momento tengo problemas para generar una respuesta. Por favor intenta de nuevo en un momento.";
 
   // 7. Guardar respuesta de la IA
   await supabase.from("messages").insert({
@@ -190,9 +196,6 @@ export async function POST(request: NextRequest) {
     .eq("id", conversation.id);
 
   // 9. Enviar respuesta por WhatsApp
-  if (!aiResponse?.trim()) {
-    return NextResponse.json({ error: "Empty AI response" }, { status: 500 });
-  }
   await sendTextMessage({ to: message.from, message: aiResponse });
 
   return NextResponse.json({ status: "ok" });
