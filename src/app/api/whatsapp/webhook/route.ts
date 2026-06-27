@@ -25,7 +25,10 @@ export async function POST(request: NextRequest) {
 
   // Responder 200 de inmediato a Meta (requerido en < 3 segundos)
   // El procesamiento real se encola en QStash
-  const qstash = new QStashClient({ token: process.env.QSTASH_TOKEN! });
+  const qstash = new QStashClient({
+    token: process.env.QSTASH_TOKEN!,
+    baseUrl: "https://qstash.upstash.io",
+  });
 
   if (body.object === "whatsapp_business_account") {
     for (const entry of body.entry) {
