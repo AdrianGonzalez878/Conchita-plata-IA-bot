@@ -162,10 +162,12 @@ export async function POST(request: NextRequest) {
   const productsContext = formatProductosParaIA(productos);
 
   // 6. Generar respuesta con IA
-  const messages = (history ?? []).map((m: Pick<Message, "role" | "content">) => ({
-    role: m.role as "user" | "assistant",
-    content: m.content,
-  }));
+  const messages = (history ?? [])
+    .filter((m: Pick<Message, "role" | "content">) => m.content?.trim())
+    .map((m: Pick<Message, "role" | "content">) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content,
+    }));
 
   const { text: aiResponse } = await generateText({
     model: anthropic("claude-haiku-4-5"),
