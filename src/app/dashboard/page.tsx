@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ProfileView } from "@/components/dashboard/ProfileView";
+import { BusinessAvatar } from "@/components/dashboard/BusinessAvatar";
 import type { Conversation, Message, ConversationStatus } from "@/types";
 
 type ConvWithPreview = Conversation & { lastMessage: string };
@@ -153,6 +154,7 @@ export default function DashboardPage() {
   const [manualText, setManualText] = useState("");
   const [sendingMsg, setSendingMsg] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [photoRefreshKey, setPhotoRefreshKey] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -271,9 +273,7 @@ export default function DashboardPage() {
         {/* Sidebar header */}
         <div className="flex items-center justify-between px-4 py-3" style={{ background: "#202c33" }}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-teal-600 flex items-center justify-center text-white font-semibold text-sm">
-              CP
-            </div>
+            <BusinessAvatar size="sm" refreshKey={photoRefreshKey} />
             <span className="text-white font-medium text-sm">Conchita Plata</span>
           </div>
           <div className="flex items-center gap-1 text-[#aebac1]">
@@ -405,7 +405,7 @@ export default function DashboardPage() {
       {activeTab === "campanas" ? (
         <CampanasView />
       ) : activeTab === "perfil" ? (
-        <ProfileView />
+        <ProfileView onPhotoUpdated={() => setPhotoRefreshKey((k) => k + 1)} />
       ) : (
         <main className="flex-1 flex flex-col min-w-0">
           {!selectedConv ? (

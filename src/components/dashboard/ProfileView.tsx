@@ -38,12 +38,15 @@ const CATEGORIES = [
   { value: "OTHER", label: "Otro" },
 ];
 
-export function ProfileView() {
+export function ProfileView({ onPhotoUpdated }: { onPhotoUpdated?: () => void }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<BusinessProfile>(EMPTY_PROFILE);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [localPhotoPreview, setLocalPhotoPreview] = useState<string | null>(null);
+  const [photoLoadFailed, setPhotoLoadFailed] = useState(false);
+  const [photoVersion, setPhotoVersion] = useState(0);
   const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
 
   useEffect(() => {
@@ -96,6 +99,9 @@ export function ProfileView() {
 
     setUploadingPhoto(true);
     setMessage(null);
+    setPhotoLoadFailed(false);
+    setLocalPhotoPreview(URL.createObjectURL(file));
+
     try {
       const formData = new FormData();
       formData.append("photo", file);
@@ -103,14 +109,22 @@ export function ProfileView() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Error al subir foto");
       setProfile((prev) => ({ ...prev, profile_picture_url: data.profile_picture_url }));
-      setMessage({ type: "ok", text: "Foto de perfil actualizada" });
+      setPhotoVersion((v) => v + 1);
+      onPhotoUpdated?.();
+      setMessage({ type: "ok", text: "Foto de perfil actualizada. Puede tardar unos segundos en verse en WhatsApp." });
     } catch (err) {
+      setLocalPhotoPreview(null);
       setMessage({ type: "error", text: err instanceof Error ? err.message : "Error al subir foto" });
     } finally {
       setUploadingPhoto(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
+
+  const displayPhotoUrl = localPhotoPreview
+    ?? (profile.profile_picture_url
+      ? `${profile.profile_picture_url}${profile.profile_picture_url.includes("?") ? "&" : "?"}v=${photoVersion}`
+      : null);
 
   const applySuggestedTexts = () => {
     setProfile((prev) => ({
@@ -180,12 +194,14 @@ export function ProfileView() {
           </p>
           <div className="flex items-center gap-5">
             <div className="w-24 h-24 rounded-full overflow-hidden bg-[#2a3942] flex items-center justify-center shrink-0">
-              {profile.profile_picture_url ? (
+              {displayPhotoUrl && !photoLoadFailed ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={profile.profile_picture_url}
+                  src={displayPhotoUrl}
                   alt="Foto de perfil"
                   className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                  onError={() => setPhotoLoadFailed(true)}
                 />
               ) : (
                 <span className="text-3xl">💎</span>
