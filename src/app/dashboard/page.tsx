@@ -152,16 +152,23 @@ export default function DashboardPage() {
     setSendingMsg(true);
     const text = manualText.trim();
     setManualText("");
-    await supabase.from("messages").insert({
+
+    // Optimistic update — show message immediately
+    const optimisticMsg: Message = {
+      id: crypto.randomUUID(),
       conversation_id: selectedConv.id,
       role: "assistant",
       sender: "admin",
       content: text,
-    });
+      whatsapp_message_id: null,
+      created_at: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimisticMsg]);
+
     await fetch("/api/admin/send-message", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to: selectedConv.customer_phone, message: text }),
+      body: JSON.stringify({ to: selectedConv.customer_phone, message: text, conversationId: selectedConv.id }),
     });
     setSendingMsg(false);
   };
