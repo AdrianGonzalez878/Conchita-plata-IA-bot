@@ -12,10 +12,10 @@ const STATUS_LABEL: Record<ConversationStatus, string> = {
   resolved: "Resuelto",
 };
 
-const STATUS_COLOR: Record<ConversationStatus, string> = {
-  ai_active: "bg-emerald-100 text-emerald-700",
-  paused: "bg-amber-100 text-amber-700",
-  resolved: "bg-stone-100 text-stone-500",
+const STATUS_DOT: Record<ConversationStatus, string> = {
+  ai_active: "bg-emerald-400",
+  paused: "bg-amber-400",
+  resolved: "bg-stone-400",
 };
 
 function formatTime(iso: string) {
@@ -24,8 +24,24 @@ function formatTime(iso: string) {
   const diff = now.getTime() - date.getTime();
   if (diff < 60_000) return "ahora";
   if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m`;
-  if (diff < 86_400_000) return date.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+  if (diff < 86_400_000)
+    return date.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
   return date.toLocaleDateString("es-MX", { day: "numeric", month: "short" });
+}
+
+function getInitials(name: string | null, phone: string) {
+  if (name) return name.charAt(0).toUpperCase();
+  return phone.slice(-2);
+}
+
+function avatarColor(str: string) {
+  const colors = [
+    "bg-teal-500", "bg-violet-500", "bg-pink-500", "bg-orange-500",
+    "bg-sky-500", "bg-rose-500", "bg-indigo-500", "bg-green-500",
+  ];
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
 }
 
 export default function DashboardPage() {
@@ -41,10 +57,10 @@ export default function DashboardPage() {
   const [sendingMsg, setSendingMsg] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const selectedConv = conversations.find((c) => c.id === selectedId) ?? null;
 
-  // ── Fetch conversations ──────────────────────────────────────
   const fetchConversations = useCallback(async () => {
     const { data } = await supabase
       .from("conversations")
@@ -56,18 +72,13 @@ export default function DashboardPage() {
         const sorted = [...(c.messages ?? [])].sort(
           (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
-        return {
-          ...c,
-          messages: undefined,
-          lastMessage: sorted[0]?.content ?? "",
-        } as ConvWithPreview;
+        return { ...c, messages: undefined, lastMessage: sorted[0]?.content ?? "" } as ConvWithPreview;
       });
       setConversations(convs);
     }
     setLoadingConvs(false);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Fetch messages for selected conversation ─────────────────
   const fetchMessages = useCallback(async (convId: string) => {
     setLoadingMsgs(true);
     const { data } = await supabase
@@ -79,25 +90,20 @@ export default function DashboardPage() {
     setLoadingMsgs(false);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Real-time: conversations ──────────────────────────────────
   useEffect(() => {
     fetchConversations();
-
     const ch = supabase
       .channel("rt-conversations")
-      .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, () => {
-        fetchConversations();
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, () =>
+        fetchConversations()
+      )
       .subscribe();
-
     return () => { supabase.removeChannel(ch); };
   }, [fetchConversations]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Real-time: messages for selected conv ─────────────────────
   useEffect(() => {
     if (!selectedId) return;
     fetchMessages(selectedId);
-
     const ch = supabase
       .channel(`rt-messages-${selectedId}`)
       .on(
@@ -106,16 +112,13 @@ export default function DashboardPage() {
         (payload) => setMessages((prev) => [...prev, payload.new as Message])
       )
       .subscribe();
-
     return () => { supabase.removeChannel(ch); };
   }, [selectedId, fetchMessages]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Auto-scroll to bottom ─────────────────────────────────────
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // ── Pause / Resume AI ─────────────────────────────────────────
   const handleTogglePause = async () => {
     if (!selectedConv || updatingStatus) return;
     const next: ConversationStatus = selectedConv.status === "paused" ? "ai_active" : "paused";
@@ -129,6 +132,7 @@ export default function DashboardPage() {
       prev.map((c) => (c.id === selectedConv.id ? { ...c, status: next } : c))
     );
     setUpdatingStatus(false);
+    if (next === "paused") setTimeout(() => inputRef.current?.focus(), 100);
   };
 
   const handleResolve = async () => {
@@ -143,143 +147,164 @@ export default function DashboardPage() {
     );
   };
 
-  // ── Send manual message ───────────────────────────────────────
   const handleSendManual = async () => {
     if (!selectedConv || !manualText.trim() || sendingMsg) return;
     setSendingMsg(true);
     const text = manualText.trim();
     setManualText("");
-
-    // Save message to Supabase
     await supabase.from("messages").insert({
       conversation_id: selectedConv.id,
       role: "assistant",
       sender: "admin",
       content: text,
     });
-
-    // Send via WhatsApp API
     await fetch("/api/admin/send-message", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ to: selectedConv.customer_phone, message: text }),
     });
-
     setSendingMsg(false);
   };
 
-  // ── Filtered conversations ────────────────────────────────────
   const filteredConvs = conversations.filter((c) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    return (
-      c.customer_name?.toLowerCase().includes(q) ||
-      c.customer_phone.includes(q)
-    );
+    return c.customer_name?.toLowerCase().includes(q) || c.customer_phone.includes(q);
   });
 
-  // ─────────────────────────────────────────────────────────────
   return (
-    <div className="h-full flex">
-      {/* ── LEFT SIDEBAR: Conversations ── */}
-      <aside className="w-80 shrink-0 border-r border-stone-200 bg-white flex flex-col">
+    <div className="h-full flex" style={{ background: "#111b21" }}>
+      {/* ── SIDEBAR ── */}
+      <aside className="w-[360px] shrink-0 flex flex-col border-r border-[#ffffff12]" style={{ background: "#111b21" }}>
+
+        {/* Sidebar header */}
+        <div className="flex items-center justify-between px-4 py-3" style={{ background: "#202c33" }}>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-teal-600 flex items-center justify-center text-white font-semibold text-sm">
+              CP
+            </div>
+            <span className="text-white font-medium text-sm">Conchita Plata</span>
+          </div>
+          <div className="flex items-center gap-1 text-[#aebac1]">
+            {/* Stats */}
+            <span className="text-xs bg-[#2a3942] px-2 py-1 rounded-full">
+              {conversations.filter((c) => c.status === "ai_active").length} activas
+            </span>
+            <span className="text-xs bg-amber-900/40 text-amber-300 px-2 py-1 rounded-full ml-1">
+              {conversations.filter((c) => c.status === "paused").length} pausadas
+            </span>
+          </div>
+        </div>
+
         {/* Search */}
-        <div className="p-3 border-b border-stone-100">
-          <input
-            type="text"
-            placeholder="Buscar cliente..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full text-sm px-3 py-2 rounded-lg bg-stone-100 border-0 focus:outline-none focus:ring-2 focus:ring-stone-400 placeholder-stone-400"
-          />
+        <div className="px-3 py-2" style={{ background: "#111b21" }}>
+          <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background: "#202c33" }}>
+            <svg className="w-4 h-4 text-[#aebac1] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Buscar conversación"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-transparent text-sm text-[#e9edef] placeholder-[#8696a0] focus:outline-none w-full"
+            />
+          </div>
         </div>
 
-        {/* Stats bar */}
-        <div className="px-3 py-2 border-b border-stone-100 flex gap-3 text-xs text-stone-500">
-          <span className="font-medium text-stone-700">{conversations.length}</span> conversaciones
-          <span>·</span>
-          <span className="text-emerald-600 font-medium">
-            {conversations.filter((c) => c.status === "ai_active").length}
-          </span> activas
-          <span>·</span>
-          <span className="text-amber-600 font-medium">
-            {conversations.filter((c) => c.status === "paused").length}
-          </span> pausadas
-        </div>
-
-        {/* List */}
+        {/* Conversation list */}
         <div className="flex-1 overflow-y-auto">
           {loadingConvs ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="w-5 h-5 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />
+            <div className="flex justify-center pt-12">
+              <div className="w-5 h-5 border-2 border-[#aebac1] border-t-teal-500 rounded-full animate-spin" />
             </div>
           ) : filteredConvs.length === 0 ? (
             <div className="text-center py-12 px-4">
-              <p className="text-stone-400 text-sm">Sin conversaciones</p>
+              <p className="text-[#8696a0] text-sm">Sin conversaciones</p>
             </div>
           ) : (
-            filteredConvs.map((conv) => (
-              <button
-                key={conv.id}
-                onClick={() => setSelectedId(conv.id)}
-                className={`w-full text-left px-4 py-3.5 border-b border-stone-100 hover:bg-stone-50 transition-colors ${
-                  selectedId === conv.id ? "bg-stone-100 border-l-2 border-l-stone-700" : ""
-                }`}
-              >
-                <div className="flex items-start justify-between gap-2">
+            filteredConvs.map((conv) => {
+              const name = conv.customer_name ?? conv.customer_phone;
+              const isSelected = selectedId === conv.id;
+              return (
+                <button
+                  key={conv.id}
+                  onClick={() => setSelectedId(conv.id)}
+                  className="w-full text-left flex items-center gap-3 px-4 py-3 transition-colors border-b border-[#ffffff08]"
+                  style={{ background: isSelected ? "#2a3942" : "transparent" }}
+                  onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = "#202c33"; }}
+                  onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                >
+                  {/* Avatar */}
+                  <div className={`w-12 h-12 rounded-full ${avatarColor(conv.customer_phone)} flex items-center justify-center text-white font-semibold text-base shrink-0`}>
+                    {getInitials(conv.customer_name, conv.customer_phone)}
+                  </div>
+
+                  {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="font-medium text-stone-800 text-sm truncate">
-                        {conv.customer_name ?? conv.customer_phone}
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[#e9edef] text-sm font-medium truncate">{name}</span>
+                      <span className="text-[#8696a0] text-xs shrink-0 ml-2">
+                        {conv.last_message_at ? formatTime(conv.last_message_at) : ""}
                       </span>
                     </div>
-                    <p className="text-stone-500 text-xs truncate leading-relaxed">
-                      {conv.lastMessage || "Sin mensajes"}
-                    </p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[#8696a0] text-xs truncate leading-relaxed">
+                        {conv.lastMessage || "Sin mensajes"}
+                      </p>
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${STATUS_DOT[conv.status]}`} />
+                    </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1.5 shrink-0">
-                    <span className="text-stone-400 text-xs">
-                      {conv.last_message_at ? formatTime(conv.last_message_at) : ""}
-                    </span>
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${STATUS_COLOR[conv.status]}`}>
-                      {STATUS_LABEL[conv.status]}
-                    </span>
-                  </div>
-                </div>
-              </button>
-            ))
+                </button>
+              );
+            })
           )}
         </div>
       </aside>
 
-      {/* ── RIGHT: Chat View ── */}
+      {/* ── CHAT AREA ── */}
       <main className="flex-1 flex flex-col min-w-0">
         {!selectedConv ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-stone-400">
-            <span className="text-4xl mb-3">💬</span>
-            <p className="text-sm">Selecciona una conversación para ver los mensajes</p>
+          /* Empty state */
+          <div className="flex-1 flex flex-col items-center justify-center" style={{ background: "#222e35" }}>
+            <div className="w-20 h-20 rounded-full bg-[#2a3942] flex items-center justify-center mb-4">
+              <svg className="w-10 h-10 text-[#aebac1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </div>
+            <h3 className="text-[#e9edef] text-lg font-light mb-1">Conchita Plata Admin</h3>
+            <p className="text-[#8696a0] text-sm text-center max-w-xs">
+              Selecciona una conversación para ver los mensajes y gestionar la IA
+            </p>
           </div>
         ) : (
           <>
             {/* Chat header */}
-            <div className="h-14 bg-white border-b border-stone-200 px-5 flex items-center justify-between shrink-0">
+            <div className="flex items-center justify-between px-4 py-2 shrink-0" style={{ background: "#202c33" }}>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center text-stone-600 text-sm font-medium">
-                  {(selectedConv.customer_name ?? selectedConv.customer_phone)[0].toUpperCase()}
+                <div className={`w-10 h-10 rounded-full ${avatarColor(selectedConv.customer_phone)} flex items-center justify-center text-white font-semibold text-sm shrink-0`}>
+                  {getInitials(selectedConv.customer_name, selectedConv.customer_phone)}
                 </div>
                 <div>
-                  <p className="font-medium text-stone-800 text-sm leading-tight">
+                  <p className="text-[#e9edef] text-sm font-medium leading-tight">
                     {selectedConv.customer_name ?? "Cliente"}
                   </p>
-                  <p className="text-stone-400 text-xs">{selectedConv.customer_phone}</p>
+                  <p className="text-[#8696a0] text-xs">{selectedConv.customer_phone}</p>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[selectedConv.status]}`}>
-                  {STATUS_LABEL[selectedConv.status]}
-                </span>
               </div>
 
               {/* Action buttons */}
               <div className="flex items-center gap-2">
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                  selectedConv.status === "ai_active"
+                    ? "bg-emerald-900/50 text-emerald-400"
+                    : selectedConv.status === "paused"
+                    ? "bg-amber-900/50 text-amber-400"
+                    : "bg-stone-700 text-stone-400"
+                }`}>
+                  {STATUS_LABEL[selectedConv.status]}
+                </span>
+
                 {selectedConv.status !== "resolved" && (
                   <>
                     <button
@@ -287,19 +312,15 @@ export default function DashboardPage() {
                       disabled={updatingStatus}
                       className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
                         selectedConv.status === "paused"
-                          ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                          : "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                          ? "bg-teal-600 hover:bg-teal-500 text-white"
+                          : "bg-amber-600 hover:bg-amber-500 text-white"
                       }`}
                     >
-                      {updatingStatus
-                        ? "..."
-                        : selectedConv.status === "paused"
-                        ? "▶ Reactivar IA"
-                        : "⏸ Pausar IA"}
+                      {updatingStatus ? "..." : selectedConv.status === "paused" ? "▶ Reactivar IA" : "⏸ Pausar IA"}
                     </button>
                     <button
                       onClick={handleResolve}
-                      className="text-xs font-medium px-3 py-1.5 rounded-lg bg-stone-100 text-stone-600 hover:bg-stone-200 transition-colors"
+                      className="text-xs font-medium px-3 py-1.5 rounded-lg bg-[#2a3942] text-[#aebac1] hover:bg-[#3b4a54] transition-colors"
                     >
                       ✓ Resolver
                     </button>
@@ -308,46 +329,62 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+            {/* Messages — WhatsApp chat wallpaper feel */}
+            <div
+              className="flex-1 overflow-y-auto px-4 py-3 space-y-1"
+              style={{ background: "#0b141a" }}
+            >
               {loadingMsgs ? (
                 <div className="flex justify-center pt-12">
-                  <div className="w-5 h-5 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-[#aebac1] border-t-teal-500 rounded-full animate-spin" />
                 </div>
               ) : messages.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-stone-400 text-sm">Sin mensajes aún</p>
+                <div className="flex justify-center pt-12">
+                  <p className="text-[#8696a0] text-sm bg-[#182229] px-4 py-2 rounded-lg">
+                    Sin mensajes aún
+                  </p>
                 </div>
               ) : (
-                messages.map((msg) => {
+                messages.map((msg, i) => {
                   const isCustomer = msg.sender === "customer";
                   const isAdmin = msg.sender === "admin";
+                  const prevMsg = messages[i - 1];
+                  const showDate =
+                    !prevMsg ||
+                    new Date(msg.created_at).toDateString() !== new Date(prevMsg.created_at).toDateString();
+
                   return (
-                    <div
-                      key={msg.id}
-                      className={`flex ${isCustomer ? "justify-start" : "justify-end"}`}
-                    >
-                      <div
-                        className={`max-w-sm lg:max-w-md xl:max-w-lg rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                          isCustomer
-                            ? "bg-white border border-stone-200 text-stone-800 rounded-tl-sm"
-                            : isAdmin
-                            ? "bg-blue-600 text-white rounded-tr-sm"
-                            : "bg-stone-800 text-white rounded-tr-sm"
-                        }`}
-                      >
-                        {!isCustomer && (
-                          <p className={`text-xs mb-1 font-medium ${isAdmin ? "text-blue-200" : "text-stone-400"}`}>
-                            {isAdmin ? "Admin" : "IA Conchita"}
+                    <div key={msg.id}>
+                      {showDate && (
+                        <div className="flex justify-center my-3">
+                          <span className="text-[#8696a0] text-xs bg-[#182229] px-3 py-1 rounded-lg">
+                            {new Date(msg.created_at).toLocaleDateString("es-MX", {
+                              weekday: "long", day: "numeric", month: "long",
+                            })}
+                          </span>
+                        </div>
+                      )}
+                      <div className={`flex ${isCustomer ? "justify-start" : "justify-end"} mb-0.5`}>
+                        <div
+                          className="max-w-[65%] rounded-lg px-3 py-2 text-sm relative"
+                          style={{
+                            background: isCustomer ? "#202c33" : isAdmin ? "#005c4b" : "#005c4b",
+                            borderRadius: isCustomer ? "0px 7.5px 7.5px 7.5px" : "7.5px 0px 7.5px 7.5px",
+                          }}
+                        >
+                          {!isCustomer && (
+                            <p className="text-xs font-medium mb-0.5" style={{ color: isAdmin ? "#53bdeb" : "#25d366" }}>
+                              {isAdmin ? "Admin" : "✦ IA Conchita"}
+                            </p>
+                          )}
+                          <p className="text-[#e9edef] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                          <p className="text-[#8696a0] text-xs mt-1 text-right">
+                            {new Date(msg.created_at).toLocaleTimeString("es-MX", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
                           </p>
-                        )}
-                        <p className="whitespace-pre-wrap">{msg.content}</p>
-                        <p className={`text-xs mt-1 ${isCustomer ? "text-stone-400" : isAdmin ? "text-blue-200" : "text-stone-400"}`}>
-                          {new Date(msg.created_at).toLocaleTimeString("es-MX", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
+                        </div>
                       </div>
                     </div>
                   );
@@ -356,30 +393,39 @@ export default function DashboardPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Manual message input (only when paused) */}
-            {selectedConv.status === "paused" && (
-              <div className="bg-white border-t border-stone-200 px-4 py-3">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-amber-600 text-xs font-medium">
-                    ⏸ IA pausada — puedes responder manualmente
-                  </span>
-                </div>
-                <div className="flex gap-2">
+            {/* Input area */}
+            {selectedConv.status === "paused" ? (
+              <div className="px-4 py-3 flex items-center gap-3 shrink-0" style={{ background: "#202c33" }}>
+                <div className="flex-1 flex items-center gap-2 rounded-lg px-4 py-2.5" style={{ background: "#2a3942" }}>
                   <input
+                    ref={inputRef}
                     type="text"
                     value={manualText}
                     onChange={(e) => setManualText(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendManual(); } }}
                     placeholder="Escribe un mensaje..."
-                    className="flex-1 text-sm px-3.5 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-stone-400 bg-stone-50"
+                    className="flex-1 bg-transparent text-sm text-[#e9edef] placeholder-[#8696a0] focus:outline-none"
                   />
-                  <button
-                    onClick={handleSendManual}
-                    disabled={!manualText.trim() || sendingMsg}
-                    className="px-4 py-2.5 bg-stone-800 text-white text-sm font-medium rounded-xl hover:bg-stone-700 disabled:opacity-40 transition-colors"
-                  >
-                    {sendingMsg ? "..." : "Enviar"}
-                  </button>
+                </div>
+                <button
+                  onClick={handleSendManual}
+                  disabled={!manualText.trim() || sendingMsg}
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-colors disabled:opacity-40"
+                  style={{ background: manualText.trim() ? "#00a884" : "#2a3942" }}
+                >
+                  <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <div className="px-4 py-3 flex items-center gap-3 shrink-0" style={{ background: "#202c33" }}>
+                <div className="flex-1 flex items-center justify-center rounded-lg px-4 py-2.5" style={{ background: "#2a3942" }}>
+                  <p className="text-[#8696a0] text-sm">
+                    {selectedConv.status === "ai_active"
+                      ? "✦ La IA está respondiendo automáticamente"
+                      : "Conversación resuelta"}
+                  </p>
                 </div>
               </div>
             )}
