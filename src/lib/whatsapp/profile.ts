@@ -103,19 +103,37 @@ export async function uploadProfilePicture(
     throw new Error("WHATSAPP_APP_ID no está configurado");
   }
 
-  const session = await whatsappFetch(
-    `/${appId}/uploads?file_length=${file.length}&file_type=${encodeURIComponent(mimeType)}`,
-    { method: "POST" }
-  );
+  const token = process.env.WHATSAPP_ACCESS_TOKEN!;
 
-  const upload = await whatsappFetch(`/${session.id}`, {
+  const sessionRes = await fetch(
+    `${WHATSAPP_API_URL}/${appId}/uploads?file_length=${file.length}&file_type=${encodeURIComponent(mimeType)}`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  const session = await sessionRes.json();
+  if (!sessionRes.ok) {
+    const hint =
+      session.error?.code === 100
+        ? " Verifica que WHATSAPP_APP_ID sea el ID completo de tu app en Meta → Configuración → Básica."
+        : "";
+    throw new Error(`WhatsApp API error: ${JSON.stringify(session)}.${hint}`);
+  }
+
+  const uploadRes = await fetch(`${WHATSAPP_API_URL}/${session.id}`, {
     method: "POST",
     headers: {
+      Authorization: `Bearer ${token}`,
       file_offset: "0",
       "Content-Type": mimeType,
     },
     body: new Uint8Array(file),
   });
+  const upload = await uploadRes.json();
+  if (!uploadRes.ok) {
+    throw new Error(`WhatsApp API error: ${JSON.stringify(upload)}`);
+  }
 
   if (!upload.h) {
     throw new Error("No se pudo obtener el handle de la imagen");
