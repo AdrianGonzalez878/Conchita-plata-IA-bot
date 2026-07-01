@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Faltan parámetros" }, { status: 400 });
   }
 
-  const supabase = await createServiceClient();
+  const supabase = createServiceClient();
   let savedMessage = null;
 
   if (conversationId) {

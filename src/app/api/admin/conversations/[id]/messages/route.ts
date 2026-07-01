@@ -6,7 +6,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = await createServiceClient();
+  const supabase = createServiceClient();
 
   const { data, error } = await supabase
     .from("messages")

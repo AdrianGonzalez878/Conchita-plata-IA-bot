@@ -20,6 +20,7 @@ export const ALL_PRODUCTS_QUERY = groq`
     nombreOpcionExtra,
     precioOpcionExtra,
     "descripcionTexto": pt::text(descripcion),
+    imagenPrincipal,
     disponible,
     stock,
     ventas
@@ -44,6 +45,7 @@ export const PRODUCT_BY_SLUG_QUERY = groq`
     nombreOpcionExtra,
     precioOpcionExtra,
     "descripcionTexto": pt::text(descripcion),
+    imagenPrincipal,
     disponible,
     stock,
     ventas

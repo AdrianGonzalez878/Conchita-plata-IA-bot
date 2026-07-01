@@ -4,6 +4,10 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ProfileView } from "@/components/dashboard/ProfileView";
 import { BusinessAvatar } from "@/components/dashboard/BusinessAvatar";
+import {
+  requestNotificationPermission,
+  showCustomerMessageNotification,
+} from "@/lib/notifications";
 import type { Conversation, Message, ConversationStatus } from "@/types";
 
 type ConvWithPreview = Conversation & { lastMessage: string };
@@ -47,6 +51,50 @@ function avatarColor(str: string) {
   return colors[Math.abs(hash) % colors.length];
 }
 
+function MobileBottomNav({
+  activeTab,
+  onTabChange,
+  totalUnread,
+}: {
+  activeTab: Tab;
+  onTabChange: (tab: Tab) => void;
+  totalUnread: number;
+}) {
+  const tabs: { id: Tab; label: string; icon: string }[] = [
+    { id: "chats", label: "Chats", icon: "💬" },
+    { id: "campanas", label: "Campañas", icon: "📣" },
+    { id: "perfil", label: "Perfil", icon: "👤" },
+  ];
+
+  return (
+    <nav
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-[#ffffff12] safe-bottom"
+      style={{ background: "#202c33" }}
+    >
+      <div className="flex">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => onTabChange(tab.id)}
+            className={`flex-1 py-2.5 flex flex-col items-center gap-0.5 relative ${
+              activeTab === tab.id ? "text-[#00a884]" : "text-[#8696a0]"
+            }`}
+          >
+            <span className="text-base">{tab.icon}</span>
+            <span className="text-[10px] font-medium">{tab.label}</span>
+            {tab.id === "chats" && totalUnread > 0 && (
+              <span className="absolute top-1 right-[calc(50%-22px)] min-w-[16px] h-4 px-1 rounded-full bg-[#00a884] text-white text-[9px] font-bold flex items-center justify-center">
+                {totalUnread > 9 ? "9+" : totalUnread}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+    </nav>
+  );
+}
+
 // ── Placeholder de campañas ──────────────────────────────────────────────────
 function CampanasView() {
   const campaigns = [
@@ -60,8 +108,8 @@ function CampanasView() {
   return (
     <div className="flex-1 flex flex-col min-w-0 overflow-y-auto" style={{ background: "#0b141a" }}>
       {/* Header */}
-      <div className="px-6 py-5 border-b border-[#ffffff12]" style={{ background: "#202c33" }}>
-        <div className="flex items-center justify-between">
+      <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-[#ffffff12]" style={{ background: "#202c33" }}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h2 className="text-[#e9edef] text-lg font-semibold">Campañas de difusión</h2>
             <p className="text-[#8696a0] text-sm mt-0.5">
@@ -70,7 +118,7 @@ function CampanasView() {
           </div>
           <button
             disabled
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium opacity-50 cursor-not-allowed"
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium opacity-50 cursor-not-allowed w-full sm:w-auto"
             style={{ background: "#00a884", color: "white" }}
             title="Próximamente"
           >
@@ -83,7 +131,7 @@ function CampanasView() {
       </div>
 
       {/* Coming soon banner */}
-      <div className="mx-6 mt-5 rounded-xl px-5 py-4 flex items-start gap-4" style={{ background: "#1d2b34", border: "1px solid #00a88440" }}>
+      <div className="mx-4 sm:mx-6 mt-4 sm:mt-5 rounded-xl px-4 sm:px-5 py-4 flex items-start gap-4" style={{ background: "#1d2b34", border: "1px solid #00a88440" }}>
         <span className="text-2xl shrink-0 mt-0.5">🚀</span>
         <div>
           <p className="text-[#25d366] font-medium text-sm">Próximamente disponible</p>
@@ -96,7 +144,7 @@ function CampanasView() {
       </div>
 
       {/* Requirements */}
-      <div className="mx-6 mt-4 rounded-xl px-5 py-4" style={{ background: "#182229" }}>
+      <div className="mx-4 sm:mx-6 mt-4 rounded-xl px-4 sm:px-5 py-4" style={{ background: "#182229" }}>
         <p className="text-[#aebac1] text-xs font-semibold uppercase tracking-wider mb-3">Requisitos para activar</p>
         <div className="space-y-2.5">
           {[
@@ -119,7 +167,7 @@ function CampanasView() {
       </div>
 
       {/* Campaign ideas */}
-      <div className="mx-6 mt-5 mb-6">
+      <div className="mx-4 sm:mx-6 mt-4 sm:mt-5 mb-20 md:mb-6">
         <p className="text-[#aebac1] text-xs font-semibold uppercase tracking-wider mb-3">Ideas de campañas</p>
         <div className="grid grid-cols-1 gap-3">
           {campaigns.map((c) => (
@@ -140,6 +188,15 @@ function CampanasView() {
   );
 }
 
+function dedupeMessages(msgs: Message[]): Message[] {
+  const seen = new Set<string>();
+  return msgs.filter((m) => {
+    if (seen.has(m.id)) return false;
+    seen.add(m.id);
+    return true;
+  });
+}
+
 // ── Main Dashboard ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const supabase = createClient();
@@ -155,10 +212,31 @@ export default function DashboardPage() {
   const [sendingMsg, setSendingMsg] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [photoRefreshKey, setPhotoRefreshKey] = useState(0);
+  const [inAppAlert, setInAppAlert] = useState<{
+    title: string;
+    body: string;
+    conversationId?: string;
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const selectedIdRef = useRef<string | null>(null);
+  const activeTabRef = useRef<Tab>("chats");
 
   const selectedConv = conversations.find((c) => c.id === selectedId) ?? null;
+  const totalUnread = conversations.reduce((sum, c) => sum + (c.unread_count ?? 0), 0);
+
+  const markConversationRead = useCallback(async (convId: string) => {
+    setConversations((prev) =>
+      prev.map((c) => (c.id === convId ? { ...c, unread_count: 0 } : c))
+    );
+    await supabase.from("conversations").update({ unread_count: 0 }).eq("id", convId);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const markConversationReadRef = useRef(markConversationRead);
+  markConversationReadRef.current = markConversationRead;
+
+  selectedIdRef.current = selectedId;
+  activeTabRef.current = activeTab;
 
   const fetchConversations = useCallback(async () => {
     const { data } = await supabase
@@ -189,7 +267,7 @@ export default function DashboardPage() {
     if (error) {
       console.error("Error fetching messages:", error);
     } else {
-      setMessages(data as Message[]);
+      setMessages(dedupeMessages(data as Message[]));
     }
     setLoadingMsgs(false);
     return data as Message[] | null;
@@ -197,14 +275,139 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchConversations();
+
+    const setupRealtimeAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        await supabase.realtime.setAuth(session.access_token);
+      }
+    };
+    void setupRealtimeAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      await supabase.realtime.setAuth(session?.access_token ?? "");
+    });
+
     const ch = supabase
       .channel("rt-conversations")
-      .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, () =>
-        fetchConversations()
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "conversations" },
+        (payload) => {
+          const updated = payload.new as Conversation;
+          setConversations((prev) =>
+            prev.map((c) =>
+              c.id === updated.id ? { ...c, ...updated, lastMessage: c.lastMessage } : c
+            )
+          );
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "conversations" },
+        () => fetchConversations()
       )
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+
+    return () => {
+      subscription.unsubscribe();
+      supabase.removeChannel(ch);
+    };
   }, [fetchConversations]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    if (Notification.permission === "default") {
+      void requestNotificationPermission();
+    }
+  }, []);
+
+  useEffect(() => {
+    document.title =
+      totalUnread > 0 ? `(${totalUnread}) Conchita Plata` : "Conchita Plata · Panel";
+  }, [totalUnread]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const id = (e as CustomEvent<{ id: string }>).detail.id;
+      setActiveTab("chats");
+      setSelectedId(id);
+      void markConversationRead(id);
+    };
+    window.addEventListener("dashboard-select-conversation", handler);
+    return () => window.removeEventListener("dashboard-select-conversation", handler);
+  }, [markConversationRead]);
+
+  useEffect(() => {
+    const onAlert = (e: Event) => {
+      const detail = (e as CustomEvent<{
+        title: string;
+        body: string;
+        conversationId?: string;
+      }>).detail;
+      setInAppAlert(detail);
+      window.setTimeout(() => setInAppAlert(null), 6000);
+    };
+
+    window.addEventListener("dashboard-in-app-alert", onAlert);
+    return () => window.removeEventListener("dashboard-in-app-alert", onAlert);
+  }, []);
+
+  useEffect(() => {
+    const ch = supabase
+      .channel("rt-incoming-customer-messages")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        (payload) => {
+          const msg = payload.new as Message;
+          if (msg.sender !== "customer") return;
+
+          setConversations((prev) => {
+            const conv = prev.find((c) => c.id === msg.conversation_id);
+            if (!conv || conv.status !== "paused") return prev;
+
+            const viewingChat =
+              activeTabRef.current === "chats" &&
+              selectedIdRef.current === msg.conversation_id &&
+              document.visibilityState === "visible";
+
+            if (viewingChat) {
+              void markConversationReadRef.current(msg.conversation_id);
+            } else {
+              showCustomerMessageNotification({
+                customerName: conv.customer_name ?? conv.customer_phone,
+                customerPhone: conv.customer_phone,
+                content: msg.content,
+                conversationId: conv.id,
+              });
+            }
+
+            return prev.map((c) => {
+              if (c.id !== msg.conversation_id) return c;
+              return {
+                ...c,
+                lastMessage: msg.content,
+                last_message_at: msg.created_at,
+                unread_count: viewingChat ? 0 : (c.unread_count ?? 0) + 1,
+              };
+            });
+          });
+
+          if (
+            selectedIdRef.current === msg.conversation_id &&
+            activeTabRef.current === "chats"
+          ) {
+            setMessages((prev) =>
+              dedupeMessages(prev.some((m) => m.id === msg.id) ? prev : [...prev, msg])
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(ch); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!selectedId) return;
@@ -222,7 +425,7 @@ export default function DashboardPage() {
         if (error) {
           console.error("Error fetching messages:", error);
         } else {
-          setMessages(data as Message[]);
+          setMessages(dedupeMessages(data as Message[]));
         }
         setLoadingMsgs(false);
       });
@@ -235,7 +438,7 @@ export default function DashboardPage() {
         (payload) => {
           const incoming = payload.new as Message;
           setMessages((prev) =>
-            prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming]
+            dedupeMessages(prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming])
           );
         }
       )
@@ -280,6 +483,7 @@ export default function DashboardPage() {
       role: "assistant",
       sender: "admin",
       content: text,
+      media_url: null,
       whatsapp_message_id: null,
       created_at: new Date().toISOString(),
     };
@@ -304,9 +508,14 @@ export default function DashboardPage() {
       }
 
       if (data.message) {
-        setMessages((prev) =>
-          prev.map((m) => (m.id === optimisticId ? (data.message as Message) : m))
-        );
+        const saved = data.message as Message;
+        setMessages((prev) => {
+          const withoutOptimistic = prev.filter((m) => m.id !== optimisticId);
+          if (withoutOptimistic.some((m) => m.id === saved.id)) {
+            return withoutOptimistic;
+          }
+          return [...withoutOptimistic, saved];
+        });
       } else {
         await fetchMessages(selectedConv.id);
       }
@@ -332,29 +541,68 @@ export default function DashboardPage() {
     return c.customer_name?.toLowerCase().includes(q) || c.customer_phone.includes(q);
   });
 
+  const showMobileList = activeTab === "chats" && !selectedId;
+  const showMobileChat = activeTab === "chats" && !!selectedId;
+
+  const handleMobileTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    if (tab !== "chats") setSelectedId(null);
+  };
+
   return (
-    <div className="h-full flex" style={{ background: "#111b21" }}>
+    <div className="h-full flex relative overflow-hidden pb-14 md:pb-0" style={{ background: "#111b21" }}>
+      {inAppAlert && (
+        <button
+          type="button"
+          onClick={() => {
+            if (inAppAlert.conversationId) {
+              window.dispatchEvent(
+                new CustomEvent("dashboard-select-conversation", {
+                  detail: { id: inAppAlert.conversationId },
+                })
+              );
+            }
+            setInAppAlert(null);
+          }}
+          className="fixed top-14 md:top-16 inset-x-3 md:inset-x-auto md:right-4 z-50 md:max-w-sm md:w-[320px] text-left rounded-xl shadow-2xl px-4 py-3 border border-[#00a88450]"
+          style={{ background: "#202c33" }}
+        >
+          <p className="text-[#25d366] text-xs font-semibold mb-1">🔔 {inAppAlert.title}</p>
+          <p className="text-[#e9edef] text-sm leading-relaxed">{inAppAlert.body}</p>
+          <p className="text-[#8696a0] text-[11px] mt-2">
+            {inAppAlert.conversationId ? "Clic para abrir el chat" : "Alerta de prueba dentro del panel"}
+          </p>
+        </button>
+      )}
       {/* ── SIDEBAR ── */}
-      <aside className="w-[360px] shrink-0 flex flex-col border-r border-[#ffffff12]" style={{ background: "#111b21" }}>
+      <aside
+        className={`${showMobileList ? "flex" : "hidden md:flex"} w-full md:w-[360px] shrink-0 flex-col border-r border-[#ffffff12]`}
+        style={{ background: "#111b21" }}
+      >
 
         {/* Sidebar header */}
-        <div className="flex items-center justify-between px-4 py-3" style={{ background: "#202c33" }}>
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between px-3 sm:px-4 py-3 gap-2" style={{ background: "#202c33" }}>
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <BusinessAvatar size="sm" refreshKey={photoRefreshKey} />
-            <span className="text-white font-medium text-sm">Conchita Plata</span>
+            <span className="text-white font-medium text-sm truncate">Conchita Plata</span>
           </div>
-          <div className="flex items-center gap-1 text-[#aebac1]">
-            <span className="text-xs bg-[#2a3942] px-2 py-1 rounded-full">
+          <div className="flex items-center gap-1 text-[#aebac1] shrink-0">
+            {totalUnread > 0 && (
+              <span className="text-[10px] sm:text-xs bg-[#00a884] text-white px-1.5 sm:px-2 py-1 rounded-full font-semibold">
+                {totalUnread} sin leer
+              </span>
+            )}
+            <span className="hidden sm:inline text-xs bg-[#2a3942] px-2 py-1 rounded-full">
               {conversations.filter((c) => c.status === "ai_active").length} activas
             </span>
-            <span className="text-xs bg-amber-900/40 text-amber-300 px-2 py-1 rounded-full ml-1">
+            <span className="hidden sm:inline text-xs bg-amber-900/40 text-amber-300 px-2 py-1 rounded-full">
               {conversations.filter((c) => c.status === "paused").length} pausadas
             </span>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-[#ffffff12]" style={{ background: "#111b21" }}>
+        {/* Tabs — desktop only (mobile uses bottom nav) */}
+        <div className="hidden md:flex border-b border-[#ffffff12]" style={{ background: "#111b21" }}>
           <button
             onClick={() => setActiveTab("chats")}
             className={`flex-1 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
@@ -419,10 +667,14 @@ export default function DashboardPage() {
                 filteredConvs.map((conv) => {
                   const name = conv.customer_name ?? conv.customer_phone;
                   const isSelected = selectedId === conv.id;
+                  const unread = conv.unread_count ?? 0;
                   return (
                     <button
                       key={conv.id}
-                      onClick={() => setSelectedId(conv.id)}
+                      onClick={() => {
+                        setSelectedId(conv.id);
+                        if (unread > 0) void markConversationRead(conv.id);
+                      }}
                       className="w-full text-left flex items-center gap-3 px-4 py-3 transition-colors border-b border-[#ffffff08]"
                       style={{ background: isSelected ? "#2a3942" : "transparent" }}
                       onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = "#202c33"; }}
@@ -433,16 +685,25 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-[#e9edef] text-sm font-medium truncate">{name}</span>
-                          <span className="text-[#8696a0] text-xs shrink-0 ml-2">
+                          <span className={`text-sm truncate ${unread > 0 ? "text-[#e9edef] font-semibold" : "text-[#e9edef] font-medium"}`}>
+                            {name}
+                          </span>
+                          <span className={`text-xs shrink-0 ml-2 ${unread > 0 ? "text-[#00a884] font-semibold" : "text-[#8696a0]"}`}>
                             {conv.last_message_at ? formatTime(conv.last_message_at) : ""}
                           </span>
                         </div>
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-[#8696a0] text-xs truncate leading-relaxed">
+                          <p className={`text-xs truncate leading-relaxed flex-1 ${unread > 0 ? "text-[#d1d7db] font-medium" : "text-[#8696a0]"}`}>
                             {conv.lastMessage || "Sin mensajes"}
                           </p>
-                          <span className={`w-2 h-2 rounded-full shrink-0 ${STATUS_DOT[conv.status]}`} />
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {unread > 0 && (
+                              <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-[#00a884] text-white text-[11px] font-bold flex items-center justify-center">
+                                {unread > 99 ? "99+" : unread}
+                              </span>
+                            )}
+                            <span className={`w-2 h-2 rounded-full ${STATUS_DOT[conv.status]}`} />
+                          </div>
                         </div>
                       </div>
                     </button>
@@ -474,9 +735,9 @@ export default function DashboardPage() {
       ) : activeTab === "perfil" ? (
         <ProfileView onPhotoUpdated={() => setPhotoRefreshKey((k) => k + 1)} />
       ) : (
-        <main className="flex-1 flex flex-col min-w-0">
+        <main className={`${showMobileChat ? "flex" : "hidden md:flex"} flex-1 flex-col min-w-0`}>
           {!selectedConv ? (
-            <div className="flex-1 flex flex-col items-center justify-center" style={{ background: "#222e35" }}>
+            <div className="hidden md:flex flex-1 flex-col items-center justify-center" style={{ background: "#222e35" }}>
               <div className="w-20 h-20 rounded-full bg-[#2a3942] flex items-center justify-center mb-4">
                 <svg className="w-10 h-10 text-[#aebac1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -490,21 +751,31 @@ export default function DashboardPage() {
           ) : (
             <>
               {/* Chat header */}
-              <div className="flex items-center justify-between px-4 py-2 shrink-0" style={{ background: "#202c33" }}>
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full ${avatarColor(selectedConv.customer_phone)} flex items-center justify-center text-white font-semibold text-sm shrink-0`}>
+              <div className="flex items-center justify-between px-2 sm:px-4 py-2 gap-2 shrink-0" style={{ background: "#202c33" }}>
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(null)}
+                    className="md:hidden shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-[#aebac1] hover:bg-[#2a3942]"
+                    aria-label="Volver a conversaciones"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full ${avatarColor(selectedConv.customer_phone)} flex items-center justify-center text-white font-semibold text-sm shrink-0`}>
                     {getInitials(selectedConv.customer_name, selectedConv.customer_phone)}
                   </div>
-                  <div>
-                    <p className="text-[#e9edef] text-sm font-medium leading-tight">
+                  <div className="min-w-0">
+                    <p className="text-[#e9edef] text-sm font-medium leading-tight truncate">
                       {selectedConv.customer_name ?? "Cliente"}
                     </p>
-                    <p className="text-[#8696a0] text-xs">{selectedConv.customer_phone}</p>
+                    <p className="text-[#8696a0] text-xs truncate">{selectedConv.customer_phone}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className={`hidden sm:inline text-xs px-2 py-1 rounded-full font-medium ${
                     selectedConv.status === "ai_active"
                       ? "bg-emerald-900/50 text-emerald-400"
                       : selectedConv.status === "paused"
@@ -516,13 +787,17 @@ export default function DashboardPage() {
                   <button
                     onClick={handleTogglePause}
                     disabled={updatingStatus}
-                    className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
+                    className={`text-[11px] sm:text-xs font-medium px-2 sm:px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap ${
                       selectedConv.status === "paused"
                         ? "bg-teal-600 hover:bg-teal-500 text-white"
                         : "bg-amber-600 hover:bg-amber-500 text-white"
                     }`}
                   >
-                    {updatingStatus ? "..." : selectedConv.status === "paused" ? "▶ Reactivar IA" : "⏸ Pausar IA"}
+                    {updatingStatus
+                      ? "..."
+                      : selectedConv.status === "paused"
+                      ? "▶ IA"
+                      : "⏸ IA"}
                   </button>
                 </div>
               </div>
@@ -558,7 +833,7 @@ export default function DashboardPage() {
                         )}
                         <div className={`flex ${isCustomer ? "justify-start" : "justify-end"} mb-0.5`}>
                           <div
-                            className="max-w-[65%] rounded-lg px-3 py-2 text-sm relative"
+                            className="max-w-[88%] sm:max-w-[80%] md:max-w-[65%] rounded-lg px-3 py-2 text-sm relative"
                             style={{
                               background: isCustomer ? "#202c33" : "#005c4b",
                               borderRadius: isCustomer ? "0px 7.5px 7.5px 7.5px" : "7.5px 0px 7.5px 7.5px",
@@ -569,7 +844,24 @@ export default function DashboardPage() {
                                 {isAdmin ? "Admin" : "✦ IA Conchita"}
                               </p>
                             )}
-                            <p className="text-[#e9edef] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                            {msg.media_url ? (
+                              <div className="space-y-2">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={msg.media_url}
+                                  alt={msg.content.split("\n")[0] ?? "Producto"}
+                                  className="rounded-md max-w-full w-full object-cover"
+                                  referrerPolicy="no-referrer"
+                                />
+                                {msg.content && (
+                                  <p className="text-[#e9edef] leading-relaxed whitespace-pre-wrap text-xs">
+                                    {msg.content}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-[#e9edef] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                            )}
                             <p className="text-[#8696a0] text-xs mt-1 text-right">
                               {new Date(msg.created_at).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
                             </p>
@@ -584,8 +876,8 @@ export default function DashboardPage() {
 
               {/* Input area */}
               {selectedConv.status === "paused" ? (
-                <div className="px-4 py-3 flex items-center gap-3 shrink-0" style={{ background: "#202c33" }}>
-                  <div className="flex-1 flex items-center gap-2 rounded-lg px-4 py-2.5" style={{ background: "#2a3942" }}>
+                <div className="px-3 sm:px-4 py-3 flex items-center gap-2 sm:gap-3 shrink-0 safe-bottom" style={{ background: "#202c33" }}>
+                  <div className="flex-1 flex items-center gap-2 rounded-lg px-3 sm:px-4 py-2.5 min-w-0" style={{ background: "#2a3942" }}>
                     <input
                       ref={inputRef}
                       type="text"
@@ -608,9 +900,9 @@ export default function DashboardPage() {
                   </button>
                 </div>
               ) : (
-                <div className="px-4 py-3 flex items-center gap-3 shrink-0" style={{ background: "#202c33" }}>
-                  <div className="flex-1 flex items-center justify-center rounded-lg px-4 py-2.5" style={{ background: "#2a3942" }}>
-                    <p className="text-[#8696a0] text-sm">✦ La IA está respondiendo automáticamente</p>
+                <div className="px-3 sm:px-4 py-3 flex items-center gap-3 shrink-0 safe-bottom" style={{ background: "#202c33" }}>
+                  <div className="flex-1 flex items-center justify-center rounded-lg px-3 sm:px-4 py-2.5" style={{ background: "#2a3942" }}>
+                    <p className="text-[#8696a0] text-xs sm:text-sm text-center">✦ La IA está respondiendo automáticamente</p>
                   </div>
                 </div>
               )}
@@ -618,6 +910,12 @@ export default function DashboardPage() {
           )}
         </main>
       )}
+
+      <MobileBottomNav
+        activeTab={activeTab}
+        onTabChange={handleMobileTabChange}
+        totalUnread={totalUnread}
+      />
     </div>
   );
 }

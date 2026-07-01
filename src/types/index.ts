@@ -57,6 +57,7 @@ export interface Message {
   role: MessageRole;
   sender: MessageSender;
   content: string;
+  media_url: string | null;
   whatsapp_message_id: string | null;
   created_at: string;
 }

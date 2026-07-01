@@ -59,6 +59,27 @@ export async function sendTemplateMessage({
   });
 }
 
+export async function sendImageMessage({
+  to,
+  imageUrl,
+  caption,
+}: {
+  to: string;
+  imageUrl: string;
+  caption?: string;
+}) {
+  return callWhatsAppAPI("/messages", {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to,
+    type: "image",
+    image: {
+      link: imageUrl,
+      ...(caption ? { caption } : {}),
+    },
+  });
+}
+
 export async function markMessageAsRead(messageId: string) {
   return callWhatsAppAPI("/messages", {
     messaging_product: "whatsapp",

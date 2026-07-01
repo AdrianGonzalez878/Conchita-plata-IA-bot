@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS messages (
   role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
   sender TEXT NOT NULL CHECK (sender IN ('customer', 'ai', 'admin')),
   content TEXT NOT NULL,
+  media_url TEXT,
   whatsapp_message_id TEXT UNIQUE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -51,6 +52,12 @@ CREATE POLICY "Service role puede insertar conversaciones"
   TO service_role
   WITH CHECK (true);
 
+CREATE POLICY "Service role puede actualizar conversaciones"
+  ON conversations FOR UPDATE
+  TO service_role
+  USING (true)
+  WITH CHECK (true);
+
 CREATE POLICY "Admins pueden ver mensajes"
   ON messages FOR SELECT
   TO authenticated
@@ -60,6 +67,21 @@ CREATE POLICY "Service role puede insertar mensajes"
   ON messages FOR INSERT
   TO service_role
   WITH CHECK (true);
+
+-- Incrementa no leídos cuando llega mensaje con IA pausada
+CREATE OR REPLACE FUNCTION increment_conversation_unread(conv_id UUID)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE conversations
+  SET unread_count = COALESCE(unread_count, 0) + 1,
+      last_message_at = NOW()
+  WHERE id = conv_id;
+END;
+$$;
 
 -- Habilitar Realtime para el dashboard en vivo
 ALTER PUBLICATION supabase_realtime ADD TABLE conversations;

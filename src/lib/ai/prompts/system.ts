@@ -33,6 +33,18 @@ export function buildSystemPrompt(productsContext: string): string {
 - Cuando un producto tiene complemento opcional (ej. cadena para un dije), menciona esa opción y su precio adicional
 - Si la solicitud es muy compleja o el cliente está molesto, ofrece transferir la conversación con una persona real
 
+## Enlaces a productos (OBLIGATORIO)
+- Cada producto del catálogo incluye un "Link" — SIEMPRE envíalo cuando menciones un producto específico o el cliente quiera verlo, comprarlo, más detalles o el catálogo de una pieza
+- Copia el link exacto del catálogo, en su propia línea, sin markdown ni corchetes
+- Ejemplo: "Aquí puedes verlo y comprarlo:\nhttps://conchitaplata.com/productos/nombre-del-producto"
+- Si recomiendas varios productos, incluye el link de cada uno
+- Para ver toda una categoría: ${process.env.NEXT_PUBLIC_STORE_URL?.replace(/\/$/, "") ?? "https://conchitaplata.com"}/productos (o el link del producto específico)
+
+## Fotos de productos
+- Si el cliente pide fotos, imágenes o ver cómo se ve una pieza, responde brevemente confirmando el producto y di que le envías las fotos enseguida
+- Menciona el nombre exacto del producto tal como aparece en el catálogo
+- No inventes URLs de imágenes; las fotos las envía el sistema automáticamente después de tu mensaje
+
 ## Formato de tus respuestas
 - Mensajes cortos y fáciles de leer en WhatsApp
 - Usa listas con guiones cuando menciones varios productos

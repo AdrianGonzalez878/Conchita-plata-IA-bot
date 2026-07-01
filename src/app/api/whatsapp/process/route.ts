@@ -7,83 +7,21 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getSanityClient } from "@/lib/sanity/client";
 import { ALL_PRODUCTS_QUERY } from "@/lib/sanity/queries";
 import { buildSystemPrompt } from "@/lib/ai/prompts/system";
-import { sendTextMessage } from "@/lib/whatsapp/client";
+import {
+  buildProductUrl,
+  customerWantsPhotos,
+  findProductsForPhotos,
+  formatProductosParaIA,
+  getProductImageUrl,
+  type ProductoCatalogo,
+} from "@/lib/products/catalog";
+import { sendImageMessage, sendTextMessage } from "@/lib/whatsapp/client";
 import type { Message } from "@/types";
-
-interface ProductoSanity {
-  _id: string;
-  titulo: string;
-  slug: string;
-  precio: number;
-  tieneDescuento?: boolean;
-  tipoDescuento?: "porcentaje" | "monto";
-  valorDescuento?: number;
-  textoBadge?: string;
-  fechaInicioDescuento?: string;
-  fechaFinDescuento?: string;
-  categoria: string;
-  tieneOpcionExtra?: boolean;
-  nombreOpcionExtra?: string;
-  precioOpcionExtra?: number;
-  descripcionTexto?: string;
-  disponible: boolean;
-  stock?: number;
-  ventas?: number;
-}
 
 interface ProcessPayload {
   message: { id: string; from: string; text: { body: string } };
   customerName: string;
   phoneNumberId: string;
-}
-
-function formatProductosParaIA(productos: ProductoSanity[]): string {
-  return productos
-    .map((p) => {
-      const lines: string[] = [];
-
-      // Nombre y categoría
-      const categoria = p.categoria.charAt(0).toUpperCase() + p.categoria.slice(1);
-      lines.push(`• ${p.titulo} [${categoria}]`);
-
-      // Precio y descuento
-      if (p.tieneDescuento && p.valorDescuento) {
-        const descuento =
-          p.tipoDescuento === "porcentaje"
-            ? `${p.valorDescuento}% OFF`
-            : `$${p.valorDescuento} MXN de descuento`;
-        const badge = p.textoBadge ?? descuento;
-        lines.push(`  Precio: $${p.precio} MXN — Promoción: ${badge}`);
-      } else {
-        lines.push(`  Precio: $${p.precio} MXN`);
-      }
-
-      // Stock
-      const stock = p.stock ?? 1;
-      if (stock === 0) {
-        lines.push(`  Stock: Agotado`);
-      } else if (stock <= 3) {
-        lines.push(`  Stock: Últimas ${stock} pieza(s)`);
-      } else {
-        lines.push(`  Stock: Disponible (${stock} uds.)`);
-      }
-
-      // Complemento opcional (cadena, pulsera, etc.)
-      if (p.tieneOpcionExtra && p.nombreOpcionExtra) {
-        lines.push(
-          `  Complemento opcional: ${p.nombreOpcionExtra} (+$${p.precioOpcionExtra ?? 0} MXN)`
-        );
-      }
-
-      // Descripción
-      if (p.descripcionTexto) {
-        const resumen = p.descripcionTexto.slice(0, 120).replace(/\n/g, " ");
-        lines.push(`  Descripción: ${resumen}${p.descripcionTexto.length > 120 ? "..." : ""}`);
-      }
-
-      return lines.join("\n");
-    })
-    .join("\n\n");
 }
 
 async function verifyQStashSignature(request: NextRequest): Promise<boolean> {
@@ -102,7 +40,7 @@ export async function POST(request: NextRequest) {
   const payload: ProcessPayload = await request.json();
   const { message, customerName } = payload;
 
-  const supabase = await createServiceClient();
+  const supabase = createServiceClient();
 
   // 1. Buscar o crear la conversación del cliente
   let { data: conversation } = await supabase
@@ -128,15 +66,39 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Could not create conversation" }, { status: 500 });
   }
 
-  // 2. Si la conversación está pausada, solo guardar el mensaje
+  // 2. Si la conversación está pausada, guardar el mensaje y marcar como no leído
   if (conversation.status === "paused") {
-    await supabase.from("messages").insert({
+    const { error: insertError } = await supabase.from("messages").insert({
       conversation_id: conversation.id,
       role: "user",
       sender: "customer",
       content: message.text.body,
       whatsapp_message_id: message.id,
     });
+
+    if (insertError) {
+      console.error("Error saving paused customer message:", insertError);
+      return NextResponse.json({ error: insertError.message }, { status: 500 });
+    }
+
+    const { error: unreadError } = await supabase.rpc("increment_conversation_unread", {
+      conv_id: conversation.id,
+    });
+
+    if (unreadError) {
+      const { error: fallbackError } = await supabase
+        .from("conversations")
+        .update({
+          last_message_at: new Date().toISOString(),
+          unread_count: (conversation.unread_count ?? 0) + 1,
+        })
+        .eq("id", conversation.id);
+
+      if (fallbackError) {
+        console.error("Error incrementing unread count:", fallbackError);
+      }
+    }
+
     return NextResponse.json({ status: "paused" });
   }
 
@@ -158,8 +120,9 @@ export async function POST(request: NextRequest) {
     .limit(20);
 
   // 5. Obtener catálogo de productos desde Sanity
-  const productos: ProductoSanity[] = await getSanityClient().fetch(ALL_PRODUCTS_QUERY);
+  const productos: ProductoCatalogo[] = await getSanityClient().fetch(ALL_PRODUCTS_QUERY);
   const productsContext = formatProductosParaIA(productos);
+  const historyText = (history ?? []).map((m) => m.content).join("\n");
 
   // 6. Generar respuesta con IA
   const messages = (history ?? [])
@@ -181,22 +144,51 @@ export async function POST(request: NextRequest) {
   const aiResponse = result.text?.trim()
     || "Hola, soy el asistente de Conchita Plata. En este momento tengo problemas para generar una respuesta. Por favor intenta de nuevo en un momento.";
 
-  // 7. Guardar respuesta de la IA
+  // 7. Guardar y enviar respuesta
+  const productsToPhoto = customerWantsPhotos(message.text.body)
+    ? findProductsForPhotos(message.text.body, aiResponse, historyText, productos, 2)
+    : [];
+
+  let savedContent = aiResponse;
+
   await supabase.from("messages").insert({
     conversation_id: conversation.id,
     role: "assistant",
     sender: "ai",
-    content: aiResponse,
+    content: savedContent,
   });
 
-  // 8. Actualizar última actividad
   await supabase
     .from("conversations")
     .update({ last_message_at: new Date().toISOString() })
     .eq("id", conversation.id);
 
-  // 9. Enviar respuesta por WhatsApp
   await sendTextMessage({ to: message.from, message: aiResponse });
+
+  for (const product of productsToPhoto) {
+    const imageUrl = getProductImageUrl(product.imagenPrincipal);
+    if (!imageUrl) continue;
+
+    const caption = `${product.titulo}\n${buildProductUrl(product.slug)}`;
+
+    try {
+      await sendImageMessage({
+        to: message.from,
+        imageUrl,
+        caption,
+      });
+
+      await supabase.from("messages").insert({
+        conversation_id: conversation.id,
+        role: "assistant",
+        sender: "ai",
+        content: caption,
+        media_url: imageUrl,
+      });
+    } catch (error) {
+      console.error("Error sending product image:", product.slug, error);
+    }
+  }
 
   return NextResponse.json({ status: "ok" });
 }

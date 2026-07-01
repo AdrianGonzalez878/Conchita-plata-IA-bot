@@ -7,19 +7,19 @@ export default function LoginPage() {
   const [state, action, pending] = useActionState(signIn, null);
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-100 to-stone-200 p-6">
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-100 to-stone-200 p-4 sm:p-6">
       <div className="w-full max-w-sm">
         {/* Logo / Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-stone-800 mb-4">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-stone-800 mb-4">
             <span className="text-2xl">💎</span>
           </div>
-          <h1 className="text-2xl font-bold text-stone-800 tracking-tight">Conchita Plata</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-stone-800 tracking-tight">Conchita Plata</h1>
           <p className="text-stone-500 text-sm mt-1">Panel de administración</p>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-6 sm:p-8">
           <form action={action} className="space-y-5">
             <div className="space-y-1.5">
               <label htmlFor="email" className="block text-sm font-medium text-stone-700">

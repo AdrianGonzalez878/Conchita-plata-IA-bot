@@ -150,8 +150,8 @@ export function ProfileView({ onPhotoUpdated }: { onPhotoUpdated?: () => void })
   }
 
   return (
-    <div className="flex-1 overflow-y-auto" style={{ background: "#0b141a" }}>
-      <div className="max-w-2xl mx-auto px-6 py-8">
+    <div className="flex-1 overflow-y-auto pb-16 md:pb-0" style={{ background: "#0b141a" }}>
+      <div className="max-w-2xl mx-auto px-4 py-5 sm:px-6 sm:py-8">
         <div className="mb-8">
           <h2 className="text-[#e9edef] text-xl font-semibold">Perfil de WhatsApp Business</h2>
           <p className="text-[#8696a0] text-sm mt-1">
@@ -192,7 +192,7 @@ export function ProfileView({ onPhotoUpdated }: { onPhotoUpdated?: () => void })
           <p className="text-[#aebac1] text-xs font-semibold uppercase tracking-wider mb-4">
             Foto de perfil
           </p>
-          <div className="flex items-center gap-5">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
             <div className="w-24 h-24 rounded-full overflow-hidden bg-[#2a3942] flex items-center justify-center shrink-0">
               {displayPhotoUrl && !photoLoadFailed ? (
                 // eslint-disable-next-line @next/next/no-img-element
