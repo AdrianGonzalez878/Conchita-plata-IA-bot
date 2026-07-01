@@ -7,6 +7,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getSanityClient } from "@/lib/sanity/client";
 import { ALL_PRODUCTS_QUERY } from "@/lib/sanity/queries";
 import { buildSystemPrompt } from "@/lib/ai/prompts/system";
+import { buildAIMessageHistory } from "@/lib/ai/conversation";
 import {
   buildProductUrl,
   customerWantsPhotos,
@@ -16,7 +17,6 @@ import {
   type ProductoCatalogo,
 } from "@/lib/products/catalog";
 import { sendImageMessage, sendTextMessage } from "@/lib/whatsapp/client";
-import type { Message } from "@/types";
 
 interface ProcessPayload {
   message: { id: string; from: string; text: { body: string } };
@@ -66,6 +66,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Could not create conversation" }, { status: 500 });
   }
 
+  // Evitar reprocesar el mismo webhook (retries de QStash / duplicados de Meta)
+  const { data: existingMessage } = await supabase
+    .from("messages")
+    .select("id")
+    .eq("whatsapp_message_id", message.id)
+    .maybeSingle();
+
+  if (existingMessage) {
+    return NextResponse.json({ status: "already_processed" });
+  }
+
   // 2. Si la conversación está pausada, guardar el mensaje y marcar como no leído
   if (conversation.status === "paused") {
     const { error: insertError } = await supabase.from("messages").insert({
@@ -103,7 +114,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 3. Guardar el mensaje del cliente
-  await supabase.from("messages").insert({
+  const { error: insertError } = await supabase.from("messages").insert({
     conversation_id: conversation.id,
     role: "user",
     sender: "customer",
@@ -111,34 +122,33 @@ export async function POST(request: NextRequest) {
     whatsapp_message_id: message.id,
   });
 
-  // 4. Obtener historial de la conversación (últimos 20 mensajes)
-  const { data: history } = await supabase
+  if (insertError) {
+    console.error("Error saving customer message:", insertError);
+    return NextResponse.json({ error: insertError.message }, { status: 500 });
+  }
+
+  // 4. Obtener los últimos 20 mensajes (más recientes, en orden cronológico)
+  const { data: recentHistory } = await supabase
     .from("messages")
     .select("role, content")
     .eq("conversation_id", conversation.id)
-    .order("created_at", { ascending: true })
+    .order("created_at", { ascending: false })
     .limit(20);
+
+  const history = [...(recentHistory ?? [])].reverse();
+  const historyText = history.map((m) => m.content).join("\n");
 
   // 5. Obtener catálogo de productos desde Sanity
   const productos: ProductoCatalogo[] = await getSanityClient().fetch(ALL_PRODUCTS_QUERY);
   const productsContext = formatProductosParaIA(productos);
-  const historyText = (history ?? []).map((m) => m.content).join("\n");
 
-  // 6. Generar respuesta con IA
-  const messages = (history ?? [])
-    .filter((m: Pick<Message, "role" | "content">) => m.content?.trim())
-    .map((m: Pick<Message, "role" | "content">) => ({
-      role: m.role as "user" | "assistant",
-      content: m.content,
-    }));
-
+  // 6. Generar respuesta con IA (siempre anclada al mensaje actual del webhook)
+  const messages = buildAIMessageHistory(history, message.text.body);
   const result = await generateText({
     model: anthropic("claude-haiku-4-5"),
     system: buildSystemPrompt(productsContext),
-    messages: messages.length > 0 ? messages : [{ role: "user", content: message.text.body }],
+    messages,
   });
-
-  console.log("AI result finishReason:", result.finishReason);
   console.log("AI response length:", result.text?.length);
 
   const aiResponse = result.text?.trim()
