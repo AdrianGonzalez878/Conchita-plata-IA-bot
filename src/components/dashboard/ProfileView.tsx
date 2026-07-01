@@ -276,7 +276,7 @@ export function ProfileView() {
                 type="email"
                 value={profile.email}
                 onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                placeholder="contacto@conchitaplata.com"
+                placeholder="conchitaplatatienda@gmail.com"
                 className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#2a3942] text-[#e9edef] border border-[#ffffff12] focus:outline-none focus:ring-2 focus:ring-[#00a884] placeholder-[#8696a0]"
               />
             </Field>

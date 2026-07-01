@@ -9,11 +9,11 @@ export const PROFILE_LIMITS = {
 
 export const SUGGESTED_PROFILE_TEXT = {
   about:
-    "Plata Ley .925 en filigrana, marquetería y piedras naturales. Diseños únicos. Compra en conchitaplata.com",
+    "Plata Ley .925 en filigrana, marquesita y piedras naturales. Diseños únicos. Compra en conchitaplata.com",
   description:
-    "Conchita Plata: joyería artesanal en plata Ley .925. Filigrana, marquetería, piedras naturales y diseños únicos hechos a mano. Compra en conchitaplata.com: catálogo, precios y promos. Anillos, collares, aretes, pulseras, dijes y juegos. Envíos a todo México. Pagos en línea. Escríbenos si tienes dudas.",
+    "Conchita Plata: joyería artesanal en plata Ley .925. Filigrana, marquesita, piedras naturales y diseños únicos hechos a mano. Compra en conchitaplata.com: catálogo, precios y promos. Anillos, collares, aretes, pulseras, dijes y juegos. Envíos a todo México. Pagos en línea. Escríbenos si tienes dudas.",
   address: "Oaxaca de Juárez, Oaxaca, México",
-  email: "contacto@conchitaplata.com",
+  email: "conchitaplatatienda@gmail.com",
   website: "https://conchitaplata.com",
 } as const;
 

@@ -42,7 +42,7 @@ export function buildSystemPrompt(productsContext: string): string {
 
 ## Información de la tienda
 - Nombre: Conchita Plata
-- Especialidad: Filigrana, marquetería, piedras naturales y diseños únicos en plata Ley .925
+- Especialidad: Filigrana, marquesita, piedras naturales y diseños únicos en plata Ley .925
 - Página web (compras): conchitaplata.com — SIEMPRE invita a comprar ahí cuando el cliente quiera hacer un pedido o ver el catálogo completo
 - Horario: Lunes a Sábado, 10:00 AM - 7:00 PM
 - Envíos: A todo México, 3-5 días hábiles
