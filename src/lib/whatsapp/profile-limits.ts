@@ -9,9 +9,9 @@ export const PROFILE_LIMITS = {
 
 export const SUGGESTED_PROFILE_TEXT = {
   about:
-    "Plata Ley .925 en filigrana, marquesita y piedras naturales. Diseños únicos. Compra en conchitaplata.com",
+    "💎 Plata Ley .925 · filigrana, marquesita y piedras naturales. Piezas únicas hechas a mano ✨ conchitaplata.com 🛒",
   description:
-    "Conchita Plata: joyería artesanal en plata Ley .925. Filigrana, marquesita, piedras naturales y diseños únicos hechos a mano. Compra en conchitaplata.com: catálogo, precios y promos. Anillos, collares, aretes, pulseras, dijes y juegos. Envíos a todo México. Pagos en línea. Escríbenos si tienes dudas.",
+    "💎 Conchita Plata — plata Ley .925 hecha a mano\n\nFiligrana · marquesita · piedras naturales · cada diseño es único ✨\n\n🛒 Compra en conchitaplata.com\nCatálogo · precios · promos\n\nAnillos · collares · aretes · pulseras · dijes · juegos\nEnvíos a todo México 🇲🇽 · pagos en línea\n\n¿Buscas un regalo o algo especial? Escríbenos 💬",
   address: "Oaxaca de Juárez, Oaxaca, México",
   email: "conchitaplatatienda@gmail.com",
   website: "https://conchitaplata.com",
