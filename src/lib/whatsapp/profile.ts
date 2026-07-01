@@ -1,3 +1,8 @@
+import {
+  PROFILE_LIMITS,
+  truncateField,
+} from "@/lib/whatsapp/profile-limits";
+
 const WHATSAPP_API_URL = "https://graph.facebook.com/v20.0";
 
 export interface WhatsAppBusinessProfile {
@@ -75,13 +80,23 @@ export async function updateBusinessProfile(input: UpdateBusinessProfileInput) {
     messaging_product: "whatsapp",
   };
 
-  if (input.about !== undefined) body.about = input.about;
-  if (input.address !== undefined) body.address = input.address;
-  if (input.description !== undefined) body.description = input.description;
-  if (input.email !== undefined) body.email = input.email;
+  if (input.about !== undefined) {
+    body.about = truncateField(input.about, PROFILE_LIMITS.about);
+  }
+  if (input.address !== undefined) {
+    body.address = truncateField(input.address, PROFILE_LIMITS.address);
+  }
+  if (input.description !== undefined) {
+    body.description = truncateField(input.description, PROFILE_LIMITS.description);
+  }
+  if (input.email !== undefined) {
+    body.email = truncateField(input.email, PROFILE_LIMITS.email);
+  }
   if (input.vertical !== undefined) body.vertical = input.vertical;
   if (input.websites !== undefined) {
-    body.websites = input.websites.filter(Boolean);
+    body.websites = input.websites
+      .filter(Boolean)
+      .map((url) => truncateField(url, PROFILE_LIMITS.website)!);
   }
   if (input.profilePictureHandle) {
     body.profile_picture_handle = input.profilePictureHandle;

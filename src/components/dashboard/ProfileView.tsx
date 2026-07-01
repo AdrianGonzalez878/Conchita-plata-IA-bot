@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import {
+  PROFILE_LIMITS,
+  SUGGESTED_PROFILE_TEXT,
+} from "@/lib/whatsapp/profile-limits";
 
 interface BusinessProfile {
   about: string;
@@ -108,6 +112,21 @@ export function ProfileView() {
     }
   };
 
+  const applySuggestedTexts = () => {
+    setProfile((prev) => ({
+      ...prev,
+      about: SUGGESTED_PROFILE_TEXT.about,
+      description: SUGGESTED_PROFILE_TEXT.description,
+      address: SUGGESTED_PROFILE_TEXT.address,
+      email: SUGGESTED_PROFILE_TEXT.email,
+      websites: [SUGGESTED_PROFILE_TEXT.website],
+    }));
+    setMessage({
+      type: "ok",
+      text: `Textos sugeridos cargados (Acerca de: ${SUGGESTED_PROFILE_TEXT.about.length}/${PROFILE_LIMITS.about}, Descripción: ${SUGGESTED_PROFILE_TEXT.description.length}/${PROFILE_LIMITS.description}). Revisa y guarda.`,
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center" style={{ background: "#0b141a" }}>
@@ -137,6 +156,22 @@ export function ProfileView() {
             {message.text}
           </div>
         )}
+
+        <section className="rounded-xl p-5 mb-6" style={{ background: "#182229", border: "1px solid #00a88440" }}>
+          <p className="text-[#e9edef] text-sm font-medium mb-1">Textos sugeridos para Conchita Plata</p>
+          <p className="text-[#8696a0] text-xs mb-3 leading-relaxed">
+            WhatsApp limita Acerca de a {PROFILE_LIMITS.about} caracteres y Descripción a {PROFILE_LIMITS.description}.
+            Estos textos ya caben — solo ajusta dirección, correo o web si hace falta.
+          </p>
+          <button
+            type="button"
+            onClick={applySuggestedTexts}
+            className="px-4 py-2 rounded-lg text-sm font-medium text-white"
+            style={{ background: "#00a884" }}
+          >
+            Usar textos sugeridos
+          </button>
+        </section>
 
         {/* Photo */}
         <section className="rounded-xl p-6 mb-6" style={{ background: "#202c33" }}>
@@ -201,35 +236,35 @@ export function ProfileView() {
             </Field>
           </div>
 
-          <Field label="Acerca de" hint="Máx. 139 caracteres — aparece debajo del nombre">
+          <Field label="Acerca de" hint={`Máx. ${PROFILE_LIMITS.about} caracteres — aparece debajo del nombre`}>
             <textarea
               value={profile.about}
               onChange={(e) => setProfile({ ...profile, about: e.target.value })}
-              maxLength={139}
+              maxLength={PROFILE_LIMITS.about}
               rows={2}
               placeholder="Joyería de plata artesanal · Plata Ley .925"
               className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#2a3942] text-[#e9edef] border border-[#ffffff12] focus:outline-none focus:ring-2 focus:ring-[#00a884] placeholder-[#8696a0] resize-none"
             />
-            <CharCount current={profile.about.length} max={139} />
+            <CharCount current={profile.about.length} max={PROFILE_LIMITS.about} />
           </Field>
 
-          <Field label="Descripción" hint="Máx. 512 caracteres — descripción completa del negocio">
+          <Field label="Descripción" hint={`Máx. ${PROFILE_LIMITS.description} caracteres — descripción completa del negocio`}>
             <textarea
               value={profile.description}
               onChange={(e) => setProfile({ ...profile, description: e.target.value })}
-              maxLength={512}
+              maxLength={PROFILE_LIMITS.description}
               rows={4}
               placeholder="Somos una joyería especializada en plata de alta calidad..."
               className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#2a3942] text-[#e9edef] border border-[#ffffff12] focus:outline-none focus:ring-2 focus:ring-[#00a884] placeholder-[#8696a0] resize-none"
             />
-            <CharCount current={profile.description.length} max={512} />
+            <CharCount current={profile.description.length} max={PROFILE_LIMITS.description} />
           </Field>
 
           <Field label="Dirección">
             <input
               value={profile.address}
               onChange={(e) => setProfile({ ...profile, address: e.target.value })}
-              maxLength={256}
+              maxLength={PROFILE_LIMITS.address}
               placeholder="Ciudad, Estado, México"
               className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#2a3942] text-[#e9edef] border border-[#ffffff12] focus:outline-none focus:ring-2 focus:ring-[#00a884] placeholder-[#8696a0]"
             />
