@@ -180,13 +180,19 @@ export default function DashboardPage() {
 
   const fetchMessages = useCallback(async (convId: string) => {
     setLoadingMsgs(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("messages")
       .select("*")
       .eq("conversation_id", convId)
       .order("created_at", { ascending: true });
-    if (data) setMessages(data as Message[]);
+
+    if (error) {
+      console.error("Error fetching messages:", error);
+    } else {
+      setMessages(data as Message[]);
+    }
     setLoadingMsgs(false);
+    return data as Message[] | null;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -202,17 +208,44 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!selectedId) return;
-    fetchMessages(selectedId);
+
+    let cancelled = false;
+    setLoadingMsgs(true);
+
+    supabase
+      .from("messages")
+      .select("*")
+      .eq("conversation_id", selectedId)
+      .order("created_at", { ascending: true })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          console.error("Error fetching messages:", error);
+        } else {
+          setMessages(data as Message[]);
+        }
+        setLoadingMsgs(false);
+      });
+
     const ch = supabase
       .channel(`rt-messages-${selectedId}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${selectedId}` },
-        (payload) => setMessages((prev) => [...prev, payload.new as Message])
+        (payload) => {
+          const incoming = payload.new as Message;
+          setMessages((prev) =>
+            prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming]
+          );
+        }
       )
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [selectedId, fetchMessages]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(ch);
+    };
+  }, [selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -240,8 +273,9 @@ export default function DashboardPage() {
     const text = manualText.trim();
     setManualText("");
 
+    const optimisticId = crypto.randomUUID();
     const optimisticMsg: Message = {
-      id: crypto.randomUUID(),
+      id: optimisticId,
       conversation_id: selectedConv.id,
       role: "assistant",
       sender: "admin",
@@ -251,12 +285,45 @@ export default function DashboardPage() {
     };
     setMessages((prev) => [...prev, optimisticMsg]);
 
-    await fetch("/api/admin/send-message", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to: selectedConv.customer_phone, message: text, conversationId: selectedConv.id }),
-    });
-    setSendingMsg(false);
+    try {
+      const res = await fetch("/api/admin/send-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: selectedConv.customer_phone,
+          message: text,
+          conversationId: selectedConv.id,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+        console.error("Send message failed:", data.error);
+        return;
+      }
+
+      if (data.message) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === optimisticId ? (data.message as Message) : m))
+        );
+      } else {
+        await fetchMessages(selectedConv.id);
+      }
+
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === selectedConv.id
+            ? { ...c, lastMessage: text, last_message_at: new Date().toISOString() }
+            : c
+        )
+      );
+    } catch (err) {
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+      console.error("Send message error:", err);
+    } finally {
+      setSendingMsg(false);
+    }
   };
 
   const filteredConvs = conversations.filter((c) => {

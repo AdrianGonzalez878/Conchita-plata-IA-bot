@@ -9,17 +9,46 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Faltan parámetros" }, { status: 400 });
   }
 
-  // Save message to Supabase with service role (bypasses RLS)
+  const supabase = await createServiceClient();
+  let savedMessage = null;
+
   if (conversationId) {
-    const supabase = await createServiceClient();
-    await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      role: "assistant",
-      sender: "admin",
-      content: message,
-    });
+    const { data, error } = await supabase
+      .from("messages")
+      .insert({
+        conversation_id: conversationId,
+        role: "assistant",
+        sender: "admin",
+        content: message.trim(),
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error saving admin message:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    savedMessage = data;
+
+    await supabase
+      .from("conversations")
+      .update({ last_message_at: new Date().toISOString() })
+      .eq("id", conversationId);
   }
 
-  await sendTextMessage({ to, message });
-  return NextResponse.json({ status: "ok" });
+  try {
+    await sendTextMessage({ to, message: message.trim() });
+  } catch (error) {
+    console.error("Error sending WhatsApp message:", error);
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : "Error al enviar por WhatsApp",
+        message: savedMessage,
+      },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ status: "ok", message: savedMessage });
 }
