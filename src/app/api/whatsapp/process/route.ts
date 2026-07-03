@@ -31,6 +31,29 @@ async function verifyQStashSignature(request: NextRequest): Promise<boolean> {
   return !!signingKey && !!signature;
 }
 
+async function incrementConversationUnread(
+  supabase: ReturnType<typeof createServiceClient>,
+  conversation: { id: string; unread_count?: number | null }
+) {
+  const { error: unreadError } = await supabase.rpc("increment_conversation_unread", {
+    conv_id: conversation.id,
+  });
+
+  if (unreadError) {
+    const { error: fallbackError } = await supabase
+      .from("conversations")
+      .update({
+        last_message_at: new Date().toISOString(),
+        unread_count: (conversation.unread_count ?? 0) + 1,
+      })
+      .eq("id", conversation.id);
+
+    if (fallbackError) {
+      console.error("Error incrementing unread count:", fallbackError);
+    }
+  }
+}
+
 export async function POST(request: NextRequest) {
   const isValid = await verifyQStashSignature(request);
   if (!isValid) {
@@ -92,23 +115,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    const { error: unreadError } = await supabase.rpc("increment_conversation_unread", {
-      conv_id: conversation.id,
-    });
-
-    if (unreadError) {
-      const { error: fallbackError } = await supabase
-        .from("conversations")
-        .update({
-          last_message_at: new Date().toISOString(),
-          unread_count: (conversation.unread_count ?? 0) + 1,
-        })
-        .eq("id", conversation.id);
-
-      if (fallbackError) {
-        console.error("Error incrementing unread count:", fallbackError);
-      }
-    }
+    await incrementConversationUnread(supabase, conversation);
 
     return NextResponse.json({ status: "paused" });
   }
@@ -126,6 +133,8 @@ export async function POST(request: NextRequest) {
     console.error("Error saving customer message:", insertError);
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
+
+  await incrementConversationUnread(supabase, conversation);
 
   // 4. Obtener los últimos 20 mensajes (más recientes, en orden cronológico)
   const { data: recentHistory } = await supabase
@@ -152,7 +161,7 @@ export async function POST(request: NextRequest) {
   console.log("AI response length:", result.text?.length);
 
   const aiResponse = result.text?.trim()
-    || "Hola, soy el asistente de Conchita Plata. En este momento tengo problemas para generar una respuesta. Por favor intenta de nuevo en un momento.";
+    || "Hola, soy ARGI, la asistente virtual de Conchita Plata. En este momento tengo problemas para generar una respuesta. Por favor intenta de nuevo en un momento.";
 
   // 7. Guardar y enviar respuesta
   const productsToPhoto = customerWantsPhotos(message.text.body)

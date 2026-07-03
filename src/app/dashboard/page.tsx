@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, type ComponentType } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ProfileView } from "@/components/dashboard/ProfileView";
 import { BusinessAvatar } from "@/components/dashboard/BusinessAvatar";
@@ -51,45 +51,97 @@ function avatarColor(str: string) {
   return colors[Math.abs(hash) % colors.length];
 }
 
+function NavIconChats({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M8 10.5h8M8 14h5m-1 6.5a8.5 8.5 0 100-17 8.5 8.5 0 000 17z"
+      />
+    </svg>
+  );
+}
+
+function NavIconCampanas({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M11 5.882V19.24a1.76 1.76 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 01-1.564-.317z"
+      />
+    </svg>
+  );
+}
+
+function NavIconPerfil({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+      />
+    </svg>
+  );
+}
+
+const MOBILE_NAV_ICONS: Record<Tab, ComponentType<{ className?: string }>> = {
+  chats: NavIconChats,
+  campanas: NavIconCampanas,
+  perfil: NavIconPerfil,
+};
+
 function MobileBottomNav({
   activeTab,
   onTabChange,
   totalUnread,
+  visible,
 }: {
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
   totalUnread: number;
+  visible: boolean;
 }) {
-  const tabs: { id: Tab; label: string; icon: string }[] = [
-    { id: "chats", label: "Chats", icon: "💬" },
-    { id: "campanas", label: "Campañas", icon: "📣" },
-    { id: "perfil", label: "Perfil", icon: "👤" },
+  const tabs: { id: Tab; label: string }[] = [
+    { id: "chats", label: "Chats" },
+    { id: "campanas", label: "Campañas" },
+    { id: "perfil", label: "Perfil" },
   ];
+
+  if (!visible) return null;
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-[#ffffff12] safe-bottom"
-      style={{ background: "#202c33" }}
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-[#ffffff12]"
+      style={{ background: "#202c33", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
-      <div className="flex">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => onTabChange(tab.id)}
-            className={`flex-1 py-2.5 flex flex-col items-center gap-0.5 relative ${
-              activeTab === tab.id ? "text-[#00a884]" : "text-[#8696a0]"
-            }`}
-          >
-            <span className="text-base">{tab.icon}</span>
-            <span className="text-[10px] font-medium">{tab.label}</span>
-            {tab.id === "chats" && totalUnread > 0 && (
-              <span className="absolute top-1 right-[calc(50%-22px)] min-w-[16px] h-4 px-1 rounded-full bg-[#00a884] text-white text-[9px] font-bold flex items-center justify-center">
-                {totalUnread > 9 ? "9+" : totalUnread}
+      <div className="flex h-[52px]">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          const Icon = MOBILE_NAV_ICONS[tab.id];
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => onTabChange(tab.id)}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative touch-manipulation transition-colors ${
+                isActive ? "text-[#00a884]" : "text-[#8696a0]"
+              }`}
+            >
+              <Icon className="w-6 h-6" />
+              <span className={`text-[10px] leading-none ${isActive ? "font-semibold" : "font-medium"}`}>
+                {tab.label}
               </span>
-            )}
-          </button>
-        ))}
+              {tab.id === "chats" && totalUnread > 0 && (
+                <span className="absolute top-1.5 right-[calc(50%-26px)] min-w-[16px] h-4 px-1 rounded-full bg-[#00a884] text-white text-[9px] font-bold flex items-center justify-center">
+                  {totalUnread > 9 ? "9+" : totalUnread}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
     </nav>
   );
@@ -106,7 +158,7 @@ function CampanasView() {
   ];
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 overflow-y-auto" style={{ background: "#0b141a" }}>
+    <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-y-auto" style={{ background: "#0b141a" }}>
       {/* Header */}
       <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-[#ffffff12]" style={{ background: "#202c33" }}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -167,7 +219,7 @@ function CampanasView() {
       </div>
 
       {/* Campaign ideas */}
-      <div className="mx-4 sm:mx-6 mt-4 sm:mt-5 mb-20 md:mb-6">
+      <div className="mx-4 sm:mx-6 mt-4 sm:mt-5 mb-6">
         <p className="text-[#aebac1] text-xs font-semibold uppercase tracking-wider mb-3">Ideas de campañas</p>
         <div className="grid grid-cols-1 gap-3">
           {campaigns.map((c) => (
@@ -274,44 +326,137 @@ export default function DashboardPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    fetchConversations();
+    let cancelled = false;
+    const channels: ReturnType<typeof supabase.channel>[] = [];
 
-    const setupRealtimeAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    const setupRealtime = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session?.access_token) {
         await supabase.realtime.setAuth(session.access_token);
       }
-    };
-    void setupRealtimeAuth();
+      if (cancelled) return;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      await fetchConversations();
+
+      const convChannel = supabase
+        .channel("rt-conversations")
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "conversations" },
+          (payload) => {
+            const updated = payload.new as Conversation;
+            const viewingChat =
+              activeTabRef.current === "chats" &&
+              selectedIdRef.current === updated.id &&
+              document.visibilityState === "visible";
+
+            setConversations((prev) =>
+              prev.map((c) =>
+                c.id === updated.id
+                  ? {
+                      ...c,
+                      ...updated,
+                      unread_count: viewingChat
+                        ? 0
+                        : (updated.unread_count ?? c.unread_count),
+                      lastMessage: c.lastMessage,
+                    }
+                  : c
+              )
+            );
+
+            if (viewingChat && (updated.unread_count ?? 0) > 0) {
+              void markConversationReadRef.current(updated.id);
+            }
+          }
+        )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "conversations" },
+          () => fetchConversations()
+        )
+        .subscribe();
+
+      const messageChannel = supabase
+        .channel("rt-incoming-messages")
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "messages" },
+          (payload) => {
+            const msg = payload.new as Message;
+
+            setConversations((prev) => {
+              const conv = prev.find((c) => c.id === msg.conversation_id);
+              if (!conv) return prev;
+
+              const previewUpdate = {
+                lastMessage: msg.content,
+                last_message_at: msg.created_at,
+              };
+
+              if (msg.sender !== "customer") {
+                return prev.map((c) =>
+                  c.id === msg.conversation_id ? { ...c, ...previewUpdate } : c
+                );
+              }
+
+              if (conv.status !== "paused" && conv.status !== "ai_active") {
+                return prev.map((c) =>
+                  c.id === msg.conversation_id ? { ...c, ...previewUpdate } : c
+                );
+              }
+
+              const viewingChat =
+                activeTabRef.current === "chats" &&
+                selectedIdRef.current === msg.conversation_id &&
+                document.visibilityState === "visible";
+
+              if (viewingChat) {
+                void markConversationReadRef.current(msg.conversation_id);
+              } else {
+                showCustomerMessageNotification({
+                  customerName: conv.customer_name ?? conv.customer_phone,
+                  customerPhone: conv.customer_phone,
+                  content: msg.content,
+                  conversationId: conv.id,
+                });
+              }
+
+              return prev.map((c) => {
+                if (c.id !== msg.conversation_id) return c;
+                return { ...c, ...previewUpdate };
+              });
+            });
+
+            if (
+              selectedIdRef.current === msg.conversation_id &&
+              activeTabRef.current === "chats"
+            ) {
+              setMessages((prev) =>
+                dedupeMessages(prev.some((m) => m.id === msg.id) ? prev : [...prev, msg])
+              );
+            }
+          }
+        )
+        .subscribe();
+
+      channels.push(convChannel, messageChannel);
+    };
+
+    void setupRealtime();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       await supabase.realtime.setAuth(session?.access_token ?? "");
     });
 
-    const ch = supabase
-      .channel("rt-conversations")
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "conversations" },
-        (payload) => {
-          const updated = payload.new as Conversation;
-          setConversations((prev) =>
-            prev.map((c) =>
-              c.id === updated.id ? { ...c, ...updated, lastMessage: c.lastMessage } : c
-            )
-          );
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "conversations" },
-        () => fetchConversations()
-      )
-      .subscribe();
-
     return () => {
+      cancelled = true;
       subscription.unsubscribe();
-      supabase.removeChannel(ch);
+      channels.forEach((ch) => supabase.removeChannel(ch));
     };
   }, [fetchConversations]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -352,62 +497,6 @@ export default function DashboardPage() {
     window.addEventListener("dashboard-in-app-alert", onAlert);
     return () => window.removeEventListener("dashboard-in-app-alert", onAlert);
   }, []);
-
-  useEffect(() => {
-    const ch = supabase
-      .channel("rt-incoming-customer-messages")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
-        (payload) => {
-          const msg = payload.new as Message;
-          if (msg.sender !== "customer") return;
-
-          setConversations((prev) => {
-            const conv = prev.find((c) => c.id === msg.conversation_id);
-            if (!conv || conv.status !== "paused") return prev;
-
-            const viewingChat =
-              activeTabRef.current === "chats" &&
-              selectedIdRef.current === msg.conversation_id &&
-              document.visibilityState === "visible";
-
-            if (viewingChat) {
-              void markConversationReadRef.current(msg.conversation_id);
-            } else {
-              showCustomerMessageNotification({
-                customerName: conv.customer_name ?? conv.customer_phone,
-                customerPhone: conv.customer_phone,
-                content: msg.content,
-                conversationId: conv.id,
-              });
-            }
-
-            return prev.map((c) => {
-              if (c.id !== msg.conversation_id) return c;
-              return {
-                ...c,
-                lastMessage: msg.content,
-                last_message_at: msg.created_at,
-                unread_count: viewingChat ? 0 : (c.unread_count ?? 0) + 1,
-              };
-            });
-          });
-
-          if (
-            selectedIdRef.current === msg.conversation_id &&
-            activeTabRef.current === "chats"
-          ) {
-            setMessages((prev) =>
-              dedupeMessages(prev.some((m) => m.id === msg.id) ? prev : [...prev, msg])
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(ch); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!selectedId) return;
@@ -543,14 +632,26 @@ export default function DashboardPage() {
 
   const showMobileList = activeTab === "chats" && !selectedId;
   const showMobileChat = activeTab === "chats" && !!selectedId;
+  const showMobileBottomNav = !showMobileChat;
 
   const handleMobileTabChange = (tab: Tab) => {
+    if (tab === "chats" && activeTab === "chats" && selectedId) {
+      setSelectedId(null);
+      return;
+    }
     setActiveTab(tab);
     if (tab !== "chats") setSelectedId(null);
   };
 
   return (
-    <div className="h-full flex relative overflow-hidden pb-14 md:pb-0" style={{ background: "#111b21" }}>
+    <div
+      className={`h-full flex relative overflow-hidden min-h-0 ${
+        showMobileBottomNav
+          ? "pb-[calc(52px+env(safe-area-inset-bottom,0px))] md:pb-0"
+          : ""
+      }`}
+      style={{ background: "#111b21" }}
+    >
       {inAppAlert && (
         <button
           type="button"
@@ -576,7 +677,7 @@ export default function DashboardPage() {
       )}
       {/* ── SIDEBAR ── */}
       <aside
-        className={`${showMobileList ? "flex" : "hidden md:flex"} w-full md:w-[360px] shrink-0 flex-col border-r border-[#ffffff12]`}
+        className={`${showMobileList ? "flex" : "hidden md:flex"} w-full md:w-[360px] shrink-0 flex-col border-r border-[#ffffff12] min-h-0 h-full`}
         style={{ background: "#111b21" }}
       >
 
@@ -731,11 +832,15 @@ export default function DashboardPage() {
 
       {/* ── MAIN CONTENT ── */}
       {activeTab === "campanas" ? (
-        <CampanasView />
+        <div className="flex flex-1 flex-col min-w-0 min-h-0 w-full">
+          <CampanasView />
+        </div>
       ) : activeTab === "perfil" ? (
-        <ProfileView onPhotoUpdated={() => setPhotoRefreshKey((k) => k + 1)} />
+        <div className="flex flex-1 flex-col min-w-0 min-h-0 w-full">
+          <ProfileView onPhotoUpdated={() => setPhotoRefreshKey((k) => k + 1)} />
+        </div>
       ) : (
-        <main className={`${showMobileChat ? "flex" : "hidden md:flex"} flex-1 flex-col min-w-0`}>
+        <main className={`${showMobileChat ? "flex w-full" : "hidden md:flex"} flex-1 flex-col min-w-0 min-h-0`}>
           {!selectedConv ? (
             <div className="hidden md:flex flex-1 flex-col items-center justify-center" style={{ background: "#222e35" }}>
               <div className="w-20 h-20 rounded-full bg-[#2a3942] flex items-center justify-center mb-4">
@@ -841,7 +946,7 @@ export default function DashboardPage() {
                           >
                             {!isCustomer && (
                               <p className="text-xs font-medium mb-0.5" style={{ color: isAdmin ? "#53bdeb" : "#25d366" }}>
-                                {isAdmin ? "Admin" : "✦ IA Conchita"}
+                                {isAdmin ? "Admin" : "✦ ARGI"}
                               </p>
                             )}
                             {msg.media_url ? (
@@ -876,7 +981,15 @@ export default function DashboardPage() {
 
               {/* Input area */}
               {selectedConv.status === "paused" ? (
-                <div className="px-3 sm:px-4 py-3 flex items-center gap-2 sm:gap-3 shrink-0 safe-bottom" style={{ background: "#202c33" }}>
+                <div
+                  className="px-3 sm:px-4 py-3 flex items-center gap-2 sm:gap-3 shrink-0"
+                  style={{
+                    background: "#202c33",
+                    paddingBottom: showMobileChat
+                      ? "max(0.75rem, env(safe-area-inset-bottom, 0px))"
+                      : undefined,
+                  }}
+                >
                   <div className="flex-1 flex items-center gap-2 rounded-lg px-3 sm:px-4 py-2.5 min-w-0" style={{ background: "#2a3942" }}>
                     <input
                       ref={inputRef}
@@ -900,9 +1013,17 @@ export default function DashboardPage() {
                   </button>
                 </div>
               ) : (
-                <div className="px-3 sm:px-4 py-3 flex items-center gap-3 shrink-0 safe-bottom" style={{ background: "#202c33" }}>
+                <div
+                  className="px-3 sm:px-4 py-3 flex items-center gap-3 shrink-0"
+                  style={{
+                    background: "#202c33",
+                    paddingBottom: showMobileChat
+                      ? "max(0.75rem, env(safe-area-inset-bottom, 0px))"
+                      : undefined,
+                  }}
+                >
                   <div className="flex-1 flex items-center justify-center rounded-lg px-3 sm:px-4 py-2.5" style={{ background: "#2a3942" }}>
-                    <p className="text-[#8696a0] text-xs sm:text-sm text-center">✦ La IA está respondiendo automáticamente</p>
+                    <p className="text-[#8696a0] text-xs sm:text-sm text-center">✦ ARGI está respondiendo automáticamente</p>
                   </div>
                 </div>
               )}
@@ -915,6 +1036,7 @@ export default function DashboardPage() {
         activeTab={activeTab}
         onTabChange={handleMobileTabChange}
         totalUnread={totalUnread}
+        visible={showMobileBottomNav}
       />
     </div>
   );

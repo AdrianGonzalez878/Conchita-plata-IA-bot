@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   PROFILE_LIMITS,
-  SUGGESTED_PROFILE_TEXT,
 } from "@/lib/whatsapp/profile-limits";
 
 interface BusinessProfile {
@@ -126,21 +125,6 @@ export function ProfileView({ onPhotoUpdated }: { onPhotoUpdated?: () => void })
       ? `${profile.profile_picture_url}${profile.profile_picture_url.includes("?") ? "&" : "?"}v=${photoVersion}`
       : null);
 
-  const applySuggestedTexts = () => {
-    setProfile((prev) => ({
-      ...prev,
-      about: SUGGESTED_PROFILE_TEXT.about,
-      description: SUGGESTED_PROFILE_TEXT.description,
-      address: SUGGESTED_PROFILE_TEXT.address,
-      email: SUGGESTED_PROFILE_TEXT.email,
-      websites: [SUGGESTED_PROFILE_TEXT.website],
-    }));
-    setMessage({
-      type: "ok",
-      text: `Textos sugeridos cargados (Acerca de: ${SUGGESTED_PROFILE_TEXT.about.length}/${PROFILE_LIMITS.about}, Descripción: ${SUGGESTED_PROFILE_TEXT.description.length}/${PROFILE_LIMITS.description}). Revisa y guarda.`,
-    });
-  };
-
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center" style={{ background: "#0b141a" }}>
@@ -150,7 +134,7 @@ export function ProfileView({ onPhotoUpdated }: { onPhotoUpdated?: () => void })
   }
 
   return (
-    <div className="flex-1 overflow-y-auto pb-16 md:pb-0" style={{ background: "#0b141a" }}>
+    <div className="flex-1 overflow-y-auto min-h-0 pb-4 md:pb-0" style={{ background: "#0b141a" }}>
       <div className="max-w-2xl mx-auto px-4 py-5 sm:px-6 sm:py-8">
         <div className="mb-8">
           <h2 className="text-[#e9edef] text-xl font-semibold">Perfil de WhatsApp Business</h2>
@@ -170,22 +154,6 @@ export function ProfileView({ onPhotoUpdated }: { onPhotoUpdated?: () => void })
             {message.text}
           </div>
         )}
-
-        <section className="rounded-xl p-5 mb-6" style={{ background: "#182229", border: "1px solid #00a88440" }}>
-          <p className="text-[#e9edef] text-sm font-medium mb-1">Textos sugeridos para Conchita Plata</p>
-          <p className="text-[#8696a0] text-xs mb-3 leading-relaxed">
-            WhatsApp limita Acerca de a {PROFILE_LIMITS.about} caracteres y Descripción a {PROFILE_LIMITS.description}.
-            Estos textos ya caben — solo ajusta dirección, correo o web si hace falta.
-          </p>
-          <button
-            type="button"
-            onClick={applySuggestedTexts}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-white"
-            style={{ background: "#00a884" }}
-          >
-            Usar textos sugeridos
-          </button>
-        </section>
 
         {/* Photo */}
         <section className="rounded-xl p-6 mb-6" style={{ background: "#202c33" }}>
