@@ -12,17 +12,19 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.wa-chat-bg {
+  background-color: #efeae2;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(0, 0, 0, 0.025) 1px, transparent 1.5px),
+    radial-gradient(circle at 80% 40%, rgba(0, 0, 0, 0.02) 1px, transparent 1.5px),
+    radial-gradient(circle at 40% 80%, rgba(0, 0, 0, 0.02) 1px, transparent 1.5px);
+  background-size: 18px 18px, 24px 24px, 16px 16px;
 }
 
 .safe-top {

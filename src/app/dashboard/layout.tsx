@@ -32,42 +32,33 @@ export default async function DashboardLayout({
   const email = user.email ?? "Admin";
 
   return (
-    <div className="h-screen flex flex-col" style={{ background: "#111b21" }}>
-      <header
-        className="shrink-0 safe-top border-b border-[#ffffff12]"
-        style={{ background: "#202c33" }}
-      >
+    <div className="h-screen flex flex-col bg-[#d1d7db]">
+      <header className="shrink-0 safe-top" style={{ background: "#00a884" }}>
         <div className="h-12 md:h-[52px] flex items-center justify-between gap-3 px-3 md:px-4">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white"
-              style={{ background: "#25D366" }}
-            >
+            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-[#00a884] bg-white">
               <WhatsAppMark className="w-[18px] h-[18px]" />
             </div>
             <div className="min-w-0 leading-tight">
-              <p className="text-[#e9edef] text-sm font-medium truncate">Panel de chats</p>
-              <p className="text-[#8696a0] text-[11px] truncate hidden sm:block">
+              <p className="text-white text-sm font-medium truncate">Panel de chats</p>
+              <p className="text-white/80 text-[11px] truncate hidden sm:block">
                 WhatsApp Business
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <div className="hidden md:flex items-center gap-2 max-w-[220px] px-2.5 py-1.5 rounded-lg" style={{ background: "#2a3942" }}>
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shrink-0"
-                style={{ background: "#00a884" }}
-              >
+            <div className="hidden md:flex items-center gap-2 max-w-[220px] px-2.5 py-1.5 rounded-lg bg-white/15">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold text-[#00a884] bg-white shrink-0">
                 {getInitials(email)}
               </div>
-              <span className="text-[#aebac1] text-xs truncate">{email}</span>
+              <span className="text-white/90 text-xs truncate">{email}</span>
             </div>
 
             <form action={signOut}>
               <button
                 type="submit"
-                className="flex items-center gap-1.5 text-[#8696a0] hover:text-[#e9edef] text-xs font-medium transition-colors px-2.5 py-2 rounded-lg hover:bg-[#2a3942]"
+                className="flex items-center gap-1.5 text-white/90 hover:text-white text-xs font-medium transition-colors px-2.5 py-2 rounded-lg hover:bg-white/15"
                 title="Cerrar sesión"
               >
                 <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>

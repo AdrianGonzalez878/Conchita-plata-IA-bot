@@ -127,18 +127,18 @@ export function ProfileView({ onPhotoUpdated }: { onPhotoUpdated?: () => void })
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center" style={{ background: "#0b141a" }}>
-        <div className="w-6 h-6 border-2 border-[#aebac1] border-t-teal-500 rounded-full animate-spin" />
+      <div className="flex-1 flex items-center justify-center bg-[#f0f2f5]">
+        <div className="w-6 h-6 border-2 border-[#d1d7db] border-t-[#00a884] rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex-1 overflow-y-auto min-h-0 pb-4 md:pb-0" style={{ background: "#0b141a" }}>
+    <div className="flex-1 overflow-y-auto min-h-0 pb-4 md:pb-0 bg-[#f0f2f5]">
       <div className="max-w-2xl mx-auto px-4 py-5 sm:px-6 sm:py-8">
         <div className="mb-8">
-          <h2 className="text-[#e9edef] text-xl font-semibold">Perfil de WhatsApp Business</h2>
-          <p className="text-[#8696a0] text-sm mt-1">
+          <h2 className="text-[#111b21] text-xl font-semibold">Perfil de WhatsApp Business</h2>
+          <p className="text-[#667781] text-sm mt-1">
             Estos datos aparecen cuando un cliente abre tu chat en WhatsApp
           </p>
         </div>
@@ -147,8 +147,8 @@ export function ProfileView({ onPhotoUpdated }: { onPhotoUpdated?: () => void })
           <div
             className={`mb-6 rounded-lg px-4 py-3 text-sm ${
               message.type === "ok"
-                ? "bg-emerald-900/30 text-emerald-400 border border-emerald-800/50"
-                : "bg-red-900/30 text-red-400 border border-red-800/50"
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                : "bg-red-50 text-red-700 border border-red-200"
             }`}
           >
             {message.text}
@@ -156,12 +156,12 @@ export function ProfileView({ onPhotoUpdated }: { onPhotoUpdated?: () => void })
         )}
 
         {/* Photo */}
-        <section className="rounded-xl p-6 mb-6" style={{ background: "#202c33" }}>
-          <p className="text-[#aebac1] text-xs font-semibold uppercase tracking-wider mb-4">
+        <section className="rounded-xl p-6 mb-6 bg-white shadow-sm">
+          <p className="text-[#667781] text-xs font-semibold uppercase tracking-wider mb-4">
             Foto de perfil
           </p>
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
-            <div className="w-24 h-24 rounded-full overflow-hidden bg-[#2a3942] flex items-center justify-center shrink-0">
+            <div className="w-24 h-24 rounded-full overflow-hidden bg-[#f0f2f5] flex items-center justify-center shrink-0">
               {displayPhotoUrl && !photoLoadFailed ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -185,7 +185,7 @@ export function ProfileView({ onPhotoUpdated }: { onPhotoUpdated?: () => void })
               >
                 {uploadingPhoto ? "Subiendo..." : "Cambiar foto"}
               </button>
-              <p className="text-[#8696a0] text-xs mt-2">JPG o PNG, máximo 5 MB. Recomendado: 640×640 px</p>
+              <p className="text-[#667781] text-xs mt-2">JPG o PNG, máximo 5 MB. Recomendado: 640×640 px</p>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -198,8 +198,8 @@ export function ProfileView({ onPhotoUpdated }: { onPhotoUpdated?: () => void })
         </section>
 
         {/* Business info */}
-        <section className="rounded-xl p-6 mb-6 space-y-5" style={{ background: "#202c33" }}>
-          <p className="text-[#aebac1] text-xs font-semibold uppercase tracking-wider">
+        <section className="rounded-xl p-6 mb-6 space-y-5 bg-white shadow-sm">
+          <p className="text-[#667781] text-xs font-semibold uppercase tracking-wider">
             Información del negocio
           </p>
 
@@ -208,14 +208,14 @@ export function ProfileView({ onPhotoUpdated }: { onPhotoUpdated?: () => void })
               <input
                 readOnly
                 value={profile.verified_name}
-                className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#2a3942] text-[#8696a0] border border-[#ffffff12] cursor-not-allowed"
+                className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#f0f2f5] text-[#667781] border border-[#e9edef] cursor-not-allowed"
               />
             </Field>
             <Field label="Número (solo lectura)">
               <input
                 readOnly
                 value={profile.display_phone_number}
-                className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#2a3942] text-[#8696a0] border border-[#ffffff12] cursor-not-allowed"
+                className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#f0f2f5] text-[#667781] border border-[#e9edef] cursor-not-allowed"
               />
             </Field>
           </div>
@@ -227,7 +227,7 @@ export function ProfileView({ onPhotoUpdated }: { onPhotoUpdated?: () => void })
               maxLength={PROFILE_LIMITS.about}
               rows={2}
               placeholder="Joyería de plata artesanal · Plata Ley .925"
-              className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#2a3942] text-[#e9edef] border border-[#ffffff12] focus:outline-none focus:ring-2 focus:ring-[#00a884] placeholder-[#8696a0] resize-none"
+              className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#f0f2f5] text-[#111b21] border border-[#e9edef] focus:outline-none focus:ring-2 focus:ring-[#00a884] placeholder-[#667781] resize-none"
             />
             <CharCount current={profile.about.length} max={PROFILE_LIMITS.about} />
           </Field>
@@ -239,7 +239,7 @@ export function ProfileView({ onPhotoUpdated }: { onPhotoUpdated?: () => void })
               maxLength={PROFILE_LIMITS.description}
               rows={4}
               placeholder="Somos una joyería especializada en plata de alta calidad..."
-              className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#2a3942] text-[#e9edef] border border-[#ffffff12] focus:outline-none focus:ring-2 focus:ring-[#00a884] placeholder-[#8696a0] resize-none"
+              className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#f0f2f5] text-[#111b21] border border-[#e9edef] focus:outline-none focus:ring-2 focus:ring-[#00a884] placeholder-[#667781] resize-none"
             />
             <CharCount current={profile.description.length} max={PROFILE_LIMITS.description} />
           </Field>
@@ -250,7 +250,7 @@ export function ProfileView({ onPhotoUpdated }: { onPhotoUpdated?: () => void })
               onChange={(e) => setProfile({ ...profile, address: e.target.value })}
               maxLength={PROFILE_LIMITS.address}
               placeholder="Ciudad, Estado, México"
-              className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#2a3942] text-[#e9edef] border border-[#ffffff12] focus:outline-none focus:ring-2 focus:ring-[#00a884] placeholder-[#8696a0]"
+              className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#f0f2f5] text-[#111b21] border border-[#e9edef] focus:outline-none focus:ring-2 focus:ring-[#00a884] placeholder-[#667781]"
             />
           </Field>
 
@@ -261,14 +261,14 @@ export function ProfileView({ onPhotoUpdated }: { onPhotoUpdated?: () => void })
                 value={profile.email}
                 onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                 placeholder="conchitaplatatienda@gmail.com"
-                className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#2a3942] text-[#e9edef] border border-[#ffffff12] focus:outline-none focus:ring-2 focus:ring-[#00a884] placeholder-[#8696a0]"
+                className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#f0f2f5] text-[#111b21] border border-[#e9edef] focus:outline-none focus:ring-2 focus:ring-[#00a884] placeholder-[#667781]"
               />
             </Field>
             <Field label="Categoría">
               <select
                 value={profile.vertical}
                 onChange={(e) => setProfile({ ...profile, vertical: e.target.value })}
-                className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#2a3942] text-[#e9edef] border border-[#ffffff12] focus:outline-none focus:ring-2 focus:ring-[#00a884]"
+                className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#f0f2f5] text-[#111b21] border border-[#e9edef] focus:outline-none focus:ring-2 focus:ring-[#00a884]"
               >
                 {CATEGORIES.map((c) => (
                   <option key={c.value} value={c.value}>{c.label}</option>
@@ -283,7 +283,7 @@ export function ProfileView({ onPhotoUpdated }: { onPhotoUpdated?: () => void })
               value={profile.websites[0] ?? ""}
               onChange={(e) => setProfile({ ...profile, websites: [e.target.value] })}
               placeholder="https://conchitaplata.com"
-              className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#2a3942] text-[#e9edef] border border-[#ffffff12] focus:outline-none focus:ring-2 focus:ring-[#00a884] placeholder-[#8696a0]"
+              className="w-full rounded-lg px-3 py-2.5 text-sm bg-[#f0f2f5] text-[#111b21] border border-[#e9edef] focus:outline-none focus:ring-2 focus:ring-[#00a884] placeholder-[#667781]"
             />
           </Field>
         </section>
@@ -313,8 +313,8 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-[#e9edef] text-sm font-medium mb-1.5">{label}</label>
-      {hint && <p className="text-[#8696a0] text-xs mb-2">{hint}</p>}
+      <label className="block text-[#111b21] text-sm font-medium mb-1.5">{label}</label>
+      {hint && <p className="text-[#667781] text-xs mb-2">{hint}</p>}
       {children}
     </div>
   );
@@ -322,7 +322,7 @@ function Field({
 
 function CharCount({ current, max }: { current: number; max: number }) {
   return (
-    <p className={`text-xs mt-1 text-right ${current > max * 0.9 ? "text-amber-400" : "text-[#8696a0]"}`}>
+    <p className={`text-xs mt-1 text-right ${current > max * 0.9 ? "text-amber-600" : "text-[#667781]"}`}>
       {current}/{max}
     </p>
   );

@@ -114,8 +114,8 @@ function MobileBottomNav({
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-[#ffffff12]"
-      style={{ background: "#202c33", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-[#e9edef]"
+      style={{ background: "#ffffff", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       <div className="flex h-[52px]">
         {tabs.map((tab) => {
@@ -127,7 +127,7 @@ function MobileBottomNav({
               type="button"
               onClick={() => onTabChange(tab.id)}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative touch-manipulation transition-colors ${
-                isActive ? "text-[#00a884]" : "text-[#8696a0]"
+                isActive ? "text-[#00a884]" : "text-[#667781]"
               }`}
             >
               <Icon className="w-6 h-6" />
@@ -158,13 +158,13 @@ function CampanasView() {
   ];
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-y-auto" style={{ background: "#0b141a" }}>
+    <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-y-auto bg-[#f0f2f5]">
       {/* Header */}
-      <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-[#ffffff12]" style={{ background: "#202c33" }}>
+      <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-[#e9edef] bg-white">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h2 className="text-[#e9edef] text-lg font-semibold">Campañas de difusión</h2>
-            <p className="text-[#8696a0] text-sm mt-0.5">
+            <h2 className="text-[#111b21] text-lg font-semibold">Campañas de difusión</h2>
+            <p className="text-[#667781] text-sm mt-0.5">
               Envía mensajes masivos a tus clientes en fechas especiales
             </p>
           </div>
@@ -183,11 +183,11 @@ function CampanasView() {
       </div>
 
       {/* Coming soon banner */}
-      <div className="mx-4 sm:mx-6 mt-4 sm:mt-5 rounded-xl px-4 sm:px-5 py-4 flex items-start gap-4" style={{ background: "#1d2b34", border: "1px solid #00a88440" }}>
+      <div className="mx-4 sm:mx-6 mt-4 sm:mt-5 rounded-xl px-4 sm:px-5 py-4 flex items-start gap-4 bg-white border border-[#d1f4ea]">
         <span className="text-2xl shrink-0 mt-0.5">🚀</span>
         <div>
-          <p className="text-[#25d366] font-medium text-sm">Próximamente disponible</p>
-          <p className="text-[#8696a0] text-xs mt-1 leading-relaxed">
+          <p className="text-[#00a884] font-medium text-sm">Próximamente disponible</p>
+          <p className="text-[#667781] text-xs mt-1 leading-relaxed">
             Esta sección te permitirá enviar mensajes de WhatsApp a todos tus clientes anteriores
             para informarles de promociones, nuevas colecciones y fechas especiales.
             Requiere configurar plantillas aprobadas por Meta y un método de pago.
@@ -196,8 +196,8 @@ function CampanasView() {
       </div>
 
       {/* Requirements */}
-      <div className="mx-4 sm:mx-6 mt-4 rounded-xl px-4 sm:px-5 py-4" style={{ background: "#182229" }}>
-        <p className="text-[#aebac1] text-xs font-semibold uppercase tracking-wider mb-3">Requisitos para activar</p>
+      <div className="mx-4 sm:mx-6 mt-4 rounded-xl px-4 sm:px-5 py-4 bg-white">
+        <p className="text-[#667781] text-xs font-semibold uppercase tracking-wider mb-3">Requisitos para activar</p>
         <div className="space-y-2.5">
           {[
             { done: true,  label: "App de Meta publicada" },
@@ -206,13 +206,13 @@ function CampanasView() {
             { done: false, label: "Método de pago configurado en Meta Business" },
           ].map((req) => (
             <div key={req.label} className="flex items-center gap-3">
-              <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${req.done ? "bg-emerald-500" : "bg-[#2a3942]"}`}>
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${req.done ? "bg-[#25d366]" : "bg-[#e9edef]"}`}>
                 {req.done
                   ? <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                  : <svg className="w-3 h-3 text-[#8696a0]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  : <svg className="w-3 h-3 text-[#667781]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 }
               </div>
-              <span className={`text-sm ${req.done ? "text-[#e9edef]" : "text-[#8696a0]"}`}>{req.label}</span>
+              <span className={`text-sm ${req.done ? "text-[#111b21]" : "text-[#667781]"}`}>{req.label}</span>
             </div>
           ))}
         </div>
@@ -220,16 +220,16 @@ function CampanasView() {
 
       {/* Campaign ideas */}
       <div className="mx-4 sm:mx-6 mt-4 sm:mt-5 mb-6">
-        <p className="text-[#aebac1] text-xs font-semibold uppercase tracking-wider mb-3">Ideas de campañas</p>
+        <p className="text-[#667781] text-xs font-semibold uppercase tracking-wider mb-3">Ideas de campañas</p>
         <div className="grid grid-cols-1 gap-3">
           {campaigns.map((c) => (
-            <div key={c.name} className="flex items-start gap-4 rounded-xl px-4 py-3.5" style={{ background: "#182229" }}>
+            <div key={c.name} className="flex items-start gap-4 rounded-xl px-4 py-3.5 bg-white">
               <span className="text-2xl shrink-0">{c.icon}</span>
               <div>
-                <p className="text-[#e9edef] text-sm font-medium">{c.name}</p>
-                <p className="text-[#8696a0] text-xs mt-0.5 leading-relaxed">{c.desc}</p>
+                <p className="text-[#111b21] text-sm font-medium">{c.name}</p>
+                <p className="text-[#667781] text-xs mt-0.5 leading-relaxed">{c.desc}</p>
               </div>
-              <span className="ml-auto text-xs text-[#8696a0] bg-[#2a3942] px-2 py-1 rounded-full shrink-0 self-center">
+              <span className="ml-auto text-xs text-[#667781] bg-[#f0f2f5] px-2 py-1 rounded-full shrink-0 self-center">
                 Próximamente
               </span>
             </div>
@@ -650,7 +650,7 @@ export default function DashboardPage() {
           ? "pb-[calc(52px+env(safe-area-inset-bottom,0px))] md:pb-0"
           : ""
       }`}
-      style={{ background: "#111b21" }}
+      style={{ background: "#ffffff" }}
     >
       {inAppAlert && (
         <button
@@ -665,51 +665,49 @@ export default function DashboardPage() {
             }
             setInAppAlert(null);
           }}
-          className="fixed top-14 md:top-16 inset-x-3 md:inset-x-auto md:right-4 z-50 md:max-w-sm md:w-[320px] text-left rounded-xl shadow-2xl px-4 py-3 border border-[#00a88450]"
-          style={{ background: "#202c33" }}
+          className="fixed top-14 md:top-16 inset-x-3 md:inset-x-auto md:right-4 z-50 md:max-w-sm md:w-[320px] text-left rounded-xl shadow-lg px-4 py-3 border border-[#d1f4ea] bg-white"
         >
-          <p className="text-[#25d366] text-xs font-semibold mb-1">🔔 {inAppAlert.title}</p>
-          <p className="text-[#e9edef] text-sm leading-relaxed">{inAppAlert.body}</p>
-          <p className="text-[#8696a0] text-[11px] mt-2">
+          <p className="text-[#00a884] text-xs font-semibold mb-1">{inAppAlert.title}</p>
+          <p className="text-[#111b21] text-sm leading-relaxed">{inAppAlert.body}</p>
+          <p className="text-[#667781] text-[11px] mt-2">
             {inAppAlert.conversationId ? "Clic para abrir el chat" : "Alerta de prueba dentro del panel"}
           </p>
         </button>
       )}
       {/* ── SIDEBAR ── */}
       <aside
-        className={`${showMobileList ? "flex" : "hidden md:flex"} w-full md:w-[360px] shrink-0 flex-col border-r border-[#ffffff12] min-h-0 h-full`}
-        style={{ background: "#111b21" }}
+        className={`${showMobileList ? "flex" : "hidden md:flex"} w-full md:w-[360px] shrink-0 flex-col border-r border-[#e9edef] min-h-0 h-full bg-white`}
       >
 
         {/* Sidebar header */}
-        <div className="flex items-center justify-between px-3 sm:px-4 py-3 gap-2" style={{ background: "#202c33" }}>
+        <div className="flex items-center justify-between px-3 sm:px-4 py-3 gap-2 bg-[#f0f2f5]">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <BusinessAvatar size="sm" refreshKey={photoRefreshKey} />
-            <span className="text-white font-medium text-sm truncate">Conchita Plata</span>
+            <span className="text-[#111b21] font-medium text-sm truncate">Conchita Plata</span>
           </div>
-          <div className="flex items-center gap-1 text-[#aebac1] shrink-0">
+          <div className="flex items-center gap-1 text-[#667781] shrink-0">
             {totalUnread > 0 && (
-              <span className="text-[10px] sm:text-xs bg-[#00a884] text-white px-1.5 sm:px-2 py-1 rounded-full font-semibold">
+              <span className="text-[10px] sm:text-xs bg-[#25d366] text-white px-1.5 sm:px-2 py-1 rounded-full font-semibold">
                 {totalUnread} sin leer
               </span>
             )}
-            <span className="hidden sm:inline text-xs bg-[#2a3942] px-2 py-1 rounded-full">
+            <span className="hidden sm:inline text-xs bg-white text-[#667781] px-2 py-1 rounded-full">
               {conversations.filter((c) => c.status === "ai_active").length} activas
             </span>
-            <span className="hidden sm:inline text-xs bg-amber-900/40 text-amber-300 px-2 py-1 rounded-full">
+            <span className="hidden sm:inline text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-full">
               {conversations.filter((c) => c.status === "paused").length} pausadas
             </span>
           </div>
         </div>
 
         {/* Tabs — desktop only (mobile uses bottom nav) */}
-        <div className="hidden md:flex border-b border-[#ffffff12]" style={{ background: "#111b21" }}>
+        <div className="hidden md:flex border-b border-[#e9edef] bg-white">
           <button
             onClick={() => setActiveTab("chats")}
             className={`flex-1 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
               activeTab === "chats"
                 ? "text-[#00a884] border-b-2 border-[#00a884]"
-                : "text-[#8696a0] hover:text-[#aebac1]"
+                : "text-[#667781] hover:text-[#111b21]"
             }`}
           >
             Chats
@@ -719,17 +717,17 @@ export default function DashboardPage() {
             className={`flex-1 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
               activeTab === "campanas"
                 ? "text-[#00a884] border-b-2 border-[#00a884]"
-                : "text-[#8696a0] hover:text-[#aebac1]"
+                : "text-[#667781] hover:text-[#111b21]"
             }`}
           >
-            📣 Campañas
+            Campañas
           </button>
           <button
             onClick={() => setActiveTab("perfil")}
             className={`flex-1 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
               activeTab === "perfil"
                 ? "text-[#00a884] border-b-2 border-[#00a884]"
-                : "text-[#8696a0] hover:text-[#aebac1]"
+                : "text-[#667781] hover:text-[#111b21]"
             }`}
           >
             Perfil
@@ -739,9 +737,9 @@ export default function DashboardPage() {
         {activeTab === "chats" && (
           <>
             {/* Search */}
-            <div className="px-3 py-2">
-              <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background: "#202c33" }}>
-                <svg className="w-4 h-4 text-[#aebac1] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="px-3 py-2 bg-white">
+              <div className="flex items-center gap-2 rounded-lg px-3 py-2 bg-[#f0f2f5]">
+                <svg className="w-4 h-4 text-[#667781] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 <input
@@ -749,7 +747,7 @@ export default function DashboardPage() {
                   placeholder="Buscar conversación"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-transparent text-sm text-[#e9edef] placeholder-[#8696a0] focus:outline-none w-full"
+                  className="bg-transparent text-sm text-[#111b21] placeholder-[#667781] focus:outline-none w-full"
                 />
               </div>
             </div>
@@ -758,11 +756,11 @@ export default function DashboardPage() {
             <div className="flex-1 overflow-y-auto">
               {loadingConvs ? (
                 <div className="flex justify-center pt-12">
-                  <div className="w-5 h-5 border-2 border-[#aebac1] border-t-teal-500 rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-[#e9edef] border-t-[#00a884] rounded-full animate-spin" />
                 </div>
               ) : filteredConvs.length === 0 ? (
                 <div className="text-center py-12 px-4">
-                  <p className="text-[#8696a0] text-sm">Sin conversaciones</p>
+                  <p className="text-[#667781] text-sm">Sin conversaciones</p>
                 </div>
               ) : (
                 filteredConvs.map((conv) => {
@@ -776,9 +774,9 @@ export default function DashboardPage() {
                         setSelectedId(conv.id);
                         if (unread > 0) void markConversationRead(conv.id);
                       }}
-                      className="w-full text-left flex items-center gap-3 px-4 py-3 transition-colors border-b border-[#ffffff08]"
-                      style={{ background: isSelected ? "#2a3942" : "transparent" }}
-                      onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = "#202c33"; }}
+                      className="w-full text-left flex items-center gap-3 px-4 py-3 transition-colors border-b border-[#f0f2f5]"
+                      style={{ background: isSelected ? "#f0f2f5" : "transparent" }}
+                      onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = "#f5f6f6"; }}
                       onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                     >
                       <div className={`w-12 h-12 rounded-full ${avatarColor(conv.customer_phone)} flex items-center justify-center text-white font-semibold text-base shrink-0`}>
@@ -786,20 +784,20 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-0.5">
-                          <span className={`text-sm truncate ${unread > 0 ? "text-[#e9edef] font-semibold" : "text-[#e9edef] font-medium"}`}>
+                          <span className={`text-sm truncate ${unread > 0 ? "text-[#111b21] font-semibold" : "text-[#111b21] font-medium"}`}>
                             {name}
                           </span>
-                          <span className={`text-xs shrink-0 ml-2 ${unread > 0 ? "text-[#00a884] font-semibold" : "text-[#8696a0]"}`}>
+                          <span className={`text-xs shrink-0 ml-2 ${unread > 0 ? "text-[#25d366] font-semibold" : "text-[#667781]"}`}>
                             {conv.last_message_at ? formatTime(conv.last_message_at) : ""}
                           </span>
                         </div>
                         <div className="flex items-center justify-between gap-2">
-                          <p className={`text-xs truncate leading-relaxed flex-1 ${unread > 0 ? "text-[#d1d7db] font-medium" : "text-[#8696a0]"}`}>
+                          <p className={`text-xs truncate leading-relaxed flex-1 ${unread > 0 ? "text-[#111b21] font-medium" : "text-[#667781]"}`}>
                             {conv.lastMessage || "Sin mensajes"}
                           </p>
                           <div className="flex items-center gap-1.5 shrink-0">
                             {unread > 0 && (
-                              <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-[#00a884] text-white text-[11px] font-bold flex items-center justify-center">
+                              <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-[#25d366] text-white text-[11px] font-bold flex items-center justify-center">
                                 {unread > 99 ? "99+" : unread}
                               </span>
                             )}
@@ -817,13 +815,13 @@ export default function DashboardPage() {
 
         {activeTab === "campanas" && (
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-            <p className="text-[#8696a0] text-xs">Funcionalidad disponible próximamente.</p>
+            <p className="text-[#667781] text-xs">Funcionalidad disponible próximamente.</p>
           </div>
         )}
 
         {activeTab === "perfil" && (
           <div className="flex-1 overflow-y-auto px-4 py-4">
-            <p className="text-[#8696a0] text-xs leading-relaxed">
+            <p className="text-[#667781] text-xs leading-relaxed">
               Configura la foto y los datos que ven tus clientes en WhatsApp.
             </p>
           </div>
@@ -842,26 +840,26 @@ export default function DashboardPage() {
       ) : (
         <main className={`${showMobileChat ? "flex w-full" : "hidden md:flex"} flex-1 flex-col min-w-0 min-h-0`}>
           {!selectedConv ? (
-            <div className="hidden md:flex flex-1 flex-col items-center justify-center" style={{ background: "#222e35" }}>
-              <div className="w-20 h-20 rounded-full bg-[#2a3942] flex items-center justify-center mb-4">
-                <svg className="w-10 h-10 text-[#aebac1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="hidden md:flex flex-1 flex-col items-center justify-center wa-chat-bg">
+              <div className="w-20 h-20 rounded-full bg-white shadow-sm flex items-center justify-center mb-4">
+                <svg className="w-10 h-10 text-[#00a884]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               </div>
-              <h3 className="text-[#e9edef] text-lg font-light mb-1">Conchita Plata Admin</h3>
-              <p className="text-[#8696a0] text-sm text-center max-w-xs">
+              <h3 className="text-[#41525d] text-lg font-light mb-1">Conchita Plata Admin</h3>
+              <p className="text-[#667781] text-sm text-center max-w-xs">
                 Selecciona una conversación para ver los mensajes y gestionar la IA
               </p>
             </div>
           ) : (
             <>
               {/* Chat header */}
-              <div className="flex items-center justify-between px-2 sm:px-4 py-2 gap-2 shrink-0" style={{ background: "#202c33" }}>
+              <div className="flex items-center justify-between px-2 sm:px-4 py-2 gap-2 shrink-0 bg-[#f0f2f5] border-b border-[#e9edef]">
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                   <button
                     type="button"
                     onClick={() => setSelectedId(null)}
-                    className="md:hidden shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-[#aebac1] hover:bg-[#2a3942]"
+                    className="md:hidden shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-[#54656f] hover:bg-[#e9edef]"
                     aria-label="Volver a conversaciones"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -872,20 +870,20 @@ export default function DashboardPage() {
                     {getInitials(selectedConv.customer_name, selectedConv.customer_phone)}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[#e9edef] text-sm font-medium leading-tight truncate">
+                    <p className="text-[#111b21] text-sm font-medium leading-tight truncate">
                       {selectedConv.customer_name ?? "Cliente"}
                     </p>
-                    <p className="text-[#8696a0] text-xs truncate">{selectedConv.customer_phone}</p>
+                    <p className="text-[#667781] text-xs truncate">{selectedConv.customer_phone}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
                   <span className={`hidden sm:inline text-xs px-2 py-1 rounded-full font-medium ${
                     selectedConv.status === "ai_active"
-                      ? "bg-emerald-900/50 text-emerald-400"
+                      ? "bg-emerald-50 text-emerald-700"
                       : selectedConv.status === "paused"
-                      ? "bg-amber-900/50 text-amber-400"
-                      : "bg-stone-700 text-stone-400"
+                      ? "bg-amber-50 text-amber-700"
+                      : "bg-stone-100 text-stone-500"
                   }`}>
                     {STATUS_LABEL[selectedConv.status]}
                   </span>
@@ -908,14 +906,14 @@ export default function DashboardPage() {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1" style={{ background: "#0b141a" }}>
+              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1 wa-chat-bg">
                 {loadingMsgs ? (
                   <div className="flex justify-center pt-12">
-                    <div className="w-5 h-5 border-2 border-[#aebac1] border-t-teal-500 rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-[#d1d7db] border-t-[#00a884] rounded-full animate-spin" />
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="flex justify-center pt-12">
-                    <p className="text-[#8696a0] text-sm bg-[#182229] px-4 py-2 rounded-lg">Sin mensajes aún</p>
+                    <p className="text-[#667781] text-sm bg-white px-4 py-2 rounded-lg shadow-sm">Sin mensajes aún</p>
                   </div>
                 ) : (
                   messages.map((msg, i) => {
@@ -929,7 +927,7 @@ export default function DashboardPage() {
                       <div key={msg.id}>
                         {showDate && (
                           <div className="flex justify-center my-3">
-                            <span className="text-[#8696a0] text-xs bg-[#182229] px-3 py-1 rounded-lg">
+                            <span className="text-[#54656f] text-xs bg-white px-3 py-1 rounded-lg shadow-sm">
                               {new Date(msg.created_at).toLocaleDateString("es-MX", {
                                 weekday: "long", day: "numeric", month: "long",
                               })}
@@ -938,14 +936,14 @@ export default function DashboardPage() {
                         )}
                         <div className={`flex ${isCustomer ? "justify-start" : "justify-end"} mb-0.5`}>
                           <div
-                            className="max-w-[88%] sm:max-w-[80%] md:max-w-[65%] rounded-lg px-3 py-2 text-sm relative"
+                            className="max-w-[88%] sm:max-w-[80%] md:max-w-[65%] rounded-lg px-3 py-2 text-sm relative shadow-sm"
                             style={{
-                              background: isCustomer ? "#202c33" : "#005c4b",
+                              background: isCustomer ? "#ffffff" : "#d9fdd3",
                               borderRadius: isCustomer ? "0px 7.5px 7.5px 7.5px" : "7.5px 0px 7.5px 7.5px",
                             }}
                           >
                             {!isCustomer && (
-                              <p className="text-xs font-medium mb-0.5" style={{ color: isAdmin ? "#53bdeb" : "#25d366" }}>
+                              <p className="text-xs font-medium mb-0.5" style={{ color: isAdmin ? "#027eb5" : "#00a884" }}>
                                 {isAdmin ? "Admin" : "✦ ARGI"}
                               </p>
                             )}
@@ -959,15 +957,15 @@ export default function DashboardPage() {
                                   referrerPolicy="no-referrer"
                                 />
                                 {msg.content && (
-                                  <p className="text-[#e9edef] leading-relaxed whitespace-pre-wrap text-xs">
+                                  <p className="text-[#111b21] leading-relaxed whitespace-pre-wrap text-xs">
                                     {msg.content}
                                   </p>
                                 )}
                               </div>
                             ) : (
-                              <p className="text-[#e9edef] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                              <p className="text-[#111b21] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                             )}
-                            <p className="text-[#8696a0] text-xs mt-1 text-right">
+                            <p className="text-[#667781] text-[11px] mt-1 text-right">
                               {new Date(msg.created_at).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
                             </p>
                           </div>
@@ -982,15 +980,14 @@ export default function DashboardPage() {
               {/* Input area */}
               {selectedConv.status === "paused" ? (
                 <div
-                  className="px-3 sm:px-4 py-3 flex items-center gap-2 sm:gap-3 shrink-0"
+                  className="px-3 sm:px-4 py-3 flex items-center gap-2 sm:gap-3 shrink-0 bg-[#f0f2f5]"
                   style={{
-                    background: "#202c33",
                     paddingBottom: showMobileChat
                       ? "max(0.75rem, env(safe-area-inset-bottom, 0px))"
                       : undefined,
                   }}
                 >
-                  <div className="flex-1 flex items-center gap-2 rounded-lg px-3 sm:px-4 py-2.5 min-w-0" style={{ background: "#2a3942" }}>
+                  <div className="flex-1 flex items-center gap-2 rounded-lg px-3 sm:px-4 py-2.5 min-w-0 bg-white">
                     <input
                       ref={inputRef}
                       type="text"
@@ -998,14 +995,14 @@ export default function DashboardPage() {
                       onChange={(e) => setManualText(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendManual(); } }}
                       placeholder="Escribe un mensaje..."
-                      className="flex-1 bg-transparent text-sm text-[#e9edef] placeholder-[#8696a0] focus:outline-none"
+                      className="flex-1 bg-transparent text-sm text-[#111b21] placeholder-[#667781] focus:outline-none"
                     />
                   </div>
                   <button
                     onClick={handleSendManual}
                     disabled={!manualText.trim() || sendingMsg}
                     className="w-10 h-10 rounded-full flex items-center justify-center transition-colors disabled:opacity-40"
-                    style={{ background: manualText.trim() ? "#00a884" : "#2a3942" }}
+                    style={{ background: manualText.trim() ? "#00a884" : "#d1d7db" }}
                   >
                     <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
@@ -1014,16 +1011,15 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div
-                  className="px-3 sm:px-4 py-3 flex items-center gap-3 shrink-0"
+                  className="px-3 sm:px-4 py-3 flex items-center gap-3 shrink-0 bg-[#f0f2f5]"
                   style={{
-                    background: "#202c33",
                     paddingBottom: showMobileChat
                       ? "max(0.75rem, env(safe-area-inset-bottom, 0px))"
                       : undefined,
                   }}
                 >
-                  <div className="flex-1 flex items-center justify-center rounded-lg px-3 sm:px-4 py-2.5" style={{ background: "#2a3942" }}>
-                    <p className="text-[#8696a0] text-xs sm:text-sm text-center">✦ ARGI está respondiendo automáticamente</p>
+                  <div className="flex-1 flex items-center justify-center rounded-lg px-3 sm:px-4 py-2.5 bg-white">
+                    <p className="text-[#667781] text-xs sm:text-sm text-center">✦ ARGI está respondiendo automáticamente</p>
                   </div>
                 </div>
               )}
